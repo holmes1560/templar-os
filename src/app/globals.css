@@ -1,0 +1,258 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   TEMPLAR OS — design tokens
+
+   Restrained. Near-black ground, precise 1px borders, one
+   saturated accent spent sparingly. Cyberpunk in structure
+   rather than in colour.
+
+   Every surface is a step, not a gradient. Every border is
+   1px. The accent appears roughly once per screen — active
+   window chrome, focus ring, or the single live indicator.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ground → surfaces. cool neutrals, biased very slightly blue
+     so the accent sits in the same family rather than fighting it. */
+  --os-ground:    #08090b;
+  --os-surface-1: #0e1014;
+  --os-surface-2: #14171c;
+  --os-surface-3: #1c2028;
+  --os-surface-4: #262b35;
+
+  /* text */
+  --os-fg:        #e7eaef;
+  --os-fg-muted:  #98a0ad;
+  --os-fg-faint:  #616a78;
+
+  /* hairlines — alpha, so they read correctly on any surface */
+  --os-line:        rgb(255 255 255 / 0.09);
+  --os-line-strong: rgb(255 255 255 / 0.16);
+
+  /* the one accent: electric indigo. */
+  --os-accent:      #6280ff;
+  --os-accent-dim:  #43539c;
+  --os-accent-wash: rgb(98 128 255 / 0.12);
+  --os-accent-fg:   #ffffff;
+
+  /* semantic — separate from the accent, never used decoratively */
+  --os-ok:   #3fb950;
+  --os-warn: #d29922;
+  --os-crit: #f85149;
+
+  /* elevation. an OS needs real depth without looking soft. */
+  --os-shadow-window:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 12px 32px -8px rgb(0 0 0 / 0.7),
+    0 2px 8px -2px rgb(0 0 0 / 0.5);
+  --os-shadow-popover:
+    0 0 0 1px rgb(0 0 0 / 0.5),
+    0 8px 24px -6px rgb(0 0 0 / 0.6);
+
+  /* geometry — sharp. an OS is not a marketing page. */
+  --os-r-window: 8px;
+  --os-r-panel:  6px;
+  --os-r-chip:   4px;
+
+  /* motion. custom curves; the built-ins are too weak.
+     never ease-in on UI — it delays the moment the eye is watching. */
+  --os-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --os-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --os-t-press:  120ms;
+  --os-t-chrome: 180ms;
+  --os-t-window: 240ms;
+
+  /* chrome metrics */
+  --os-taskbar-h: 48px;
+  --os-titlebar-h: 34px;
+}
+
+/* light theme — the Settings app toggles this (§14).
+   not a naive inversion: the accent darkens so it stays legible
+   on a light ground, and hairlines flip to black-alpha. */
+:root[data-theme="light"] {
+  --os-ground:    #eceef1;
+  --os-surface-1: #f4f5f7;
+  --os-surface-2: #ffffff;
+  --os-surface-3: #e8eaee;
+  --os-surface-4: #dcdfe5;
+
+  --os-fg:        #14171c;
+  --os-fg-muted:  #545c69;
+  --os-fg-faint:  #838b98;
+
+  --os-line:        rgb(0 0 0 / 0.11);
+  --os-line-strong: rgb(0 0 0 / 0.2);
+
+  --os-accent:      #3d5ae0;
+  --os-accent-dim:  #8697e8;
+  --os-accent-wash: rgb(61 90 224 / 0.1);
+
+  --os-shadow-window:
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 12px 32px -8px rgb(0 0 0 / 0.18),
+    0 2px 8px -2px rgb(0 0 0 / 0.1);
+  --os-shadow-popover:
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 8px 24px -6px rgb(0 0 0 / 0.16);
+}
+
+@theme inline {
+  --color-ground:    var(--os-ground);
+  --color-surface-1: var(--os-surface-1);
+  --color-surface-2: var(--os-surface-2);
+  --color-surface-3: var(--os-surface-3);
+  --color-surface-4: var(--os-surface-4);
+
+  --color-fg:       var(--os-fg);
+  --color-fg-muted: var(--os-fg-muted);
+  --color-fg-faint: var(--os-fg-faint);
+
+  --color-accent:      var(--os-accent);
+  --color-accent-dim:  var(--os-accent-dim);
+  --color-accent-wash: var(--os-accent-wash);
+  --color-accent-fg:   var(--os-accent-fg);
+
+  --color-ok:   var(--os-ok);
+  --color-warn: var(--os-warn);
+  --color-crit: var(--os-crit);
+
+  --color-line:        var(--os-line);
+  --color-line-strong: var(--os-line-strong);
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-window: var(--os-r-window);
+  --radius-panel:  var(--os-r-panel);
+  --radius-chip:   var(--os-r-chip);
+
+  --shadow-window:  var(--os-shadow-window);
+  --shadow-popover: var(--os-shadow-popover);
+
+  --ease-out:    var(--os-ease-out);
+  --ease-in-out: var(--os-ease-in-out);
+}
+
+/* ─────────────────────────  base  ───────────────────────── */
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--os-ground);
+  color: var(--os-fg);
+  font-family: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* digits line up in columns all over an OS: clocks, file sizes, ports */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* uppercase micro-labels need air to stay legible */
+.label {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--os-fg-faint);
+}
+
+/* keyboard focus must always be visible — §20.
+   :focus-visible only, so mouse users don't see rings everywhere. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--os-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* pressable things confirm they heard you */
+.pressable {
+  transition: transform var(--os-t-press) var(--os-ease-out),
+              background var(--os-t-chrome) ease;
+}
+.pressable:active { transform: scale(0.97); }
+
+/* hover only where hover actually exists — touch devices fire
+   hover on tap, which produces stuck states. */
+@media (hover: hover) and (pointer: fine) {
+  .hoverable:hover { background: var(--os-surface-3); }
+}
+
+/* scrollbars, styled to belong to the OS rather than the browser */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--os-surface-4) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--os-surface-4);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background-clip: content-box; background-color: var(--os-fg-faint); }
+
+/* dragging a window shouldn't select text across the desktop */
+.dragging, .dragging * { user-select: none !important; cursor: grabbing !important; }
+
+/* slow drifting grid behind the lock screen. one 44px cycle, so the loop
+   is seamless — the tile repeats exactly where it started. */
+.drift { animation: drift 40s linear infinite; }
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(44px, 44px, 0); }
+}
+
+/* Opaque ground beneath the OS. Present in the server HTML, so the portfolio
+   never flashes before hydration and never shows through a crossfade.
+   Sits just under the shell (z-70) and lifts only for Web View. */
+#os-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: var(--os-ground);
+}
+:root[data-os="web"] #os-curtain { display: none; }
+
+/* auto-login: each dot lands rather than blinking into existence —
+   nothing in the real world appears from nothing. */
+.dot-in { animation: dot-in 140ms var(--os-ease-out) both; }
+@keyframes dot-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.caret { animation: caret 900ms steps(2, jump-none) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
+/* the desktop's own ground texture */
+.os-grid {
+  background-image:
+    linear-gradient(var(--os-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--os-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* §19/§20 — reduced motion is a real second design, not an off switch.
+   movement goes; opacity and colour stay, because they aid comprehension. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* the user can also force this from Settings, independent of the OS setting */
+:root[data-motion="off"] *,
+:root[data-motion="off"] *::before,
+:root[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}

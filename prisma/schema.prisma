@@ -1,0 +1,335 @@
+// TEMPLAR OS — portfolio CMS schema
+//
+// Design notes:
+//  · Project and Application are deliberately separate (§5). A Project is the
+//    work; an Application is how that work is represented inside the OS. One
+//    project can surface as several applications, and system apps (Terminal,
+//    Settings) are applications with no project at all.
+//  · AI-generated prose is stored beside, never on top of, human-edited prose
+//    (§20). A re-analysis writes the ai* columns; the admin's own text is
+//    untouched unless they explicitly adopt the suggestion.
+//  · Technologies are a real relation because they're reusable and filterable.
+//    Features/challenges/lessons stay as ordered text arrays — they're prose
+//    belonging to one project, not entities worth their own table.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── auth ───────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("admin_users")
+}
+
+// ───────────────────────────── projects ─────────────────────────────
+
+enum Category {
+  WEB
+  MOBILE
+  CYBERSECURITY
+  AI
+  HARDWARE
+  EXPERIMENTS
+}
+
+/// Where the source actually lives. Drives whether a repo link renders at all.
+enum RepoVisibility {
+  PUBLIC
+  PRIVATE
+  LOCAL
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Project {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  /// what the admin has approved — this is what the portfolio renders
+  shortDescription String
+  longDescription  String
+
+  /// what the importer last suggested; never overwrites the two above (§20)
+  aiShortDescription String?
+  aiLongDescription  String?
+  aiGeneratedAt      DateTime?
+
+  category Category
+  period   String?
+  team     String?
+
+  githubUrl       String?
+  repositoryOwner String?
+  repositoryName  String?
+  repoVisibility  RepoVisibility @default(LOCAL)
+
+  /// hosted is explicit (§6): a liveUrl may exist while hosting is switched off
+  hosted  Boolean @default(false)
+  liveUrl String?
+  docsUrl String?
+
+  featured Boolean       @default(false)
+  status   ProjectStatus @default(DRAFT)
+
+  /// GitHub linkage. The numeric repo id is GitHub's stable identifier —
+  /// repositories get renamed and moved between owners, and a name-based
+  /// link would silently orphan itself when that happens (§12).
+  githubRepoId  BigInt?
+  defaultBranch String?
+  /// head SHA at the last analysis; sync compares against it so an unchanged
+  /// repository costs zero AI calls (§14)
+  lastAnalyzedSha String?
+  lastSyncedAt    DateTime?
+
+  /// honesty fields — surfaced in the UI, never silently dropped
+  clientWork Boolean @default(false)
+  caveat     String?
+
+  features   String[]
+  challenges String[]
+  learned    String[]
+  skills     String[]
+
+  technologies ProjectTechnology[]
+  applications Application[]
+  assets       Asset[]
+  importJobs   ImportJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, featured])
+  @@index([category])
+  @@map("projects")
+}
+
+model Technology {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  projects ProjectTechnology[]
+
+  @@map("technologies")
+}
+
+model ProjectTechnology {
+  projectId    String
+  technologyId String
+  order        Int    @default(0)
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  technology Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, technologyId])
+  @@map("project_technologies")
+}
+
+// ─────────────────────────── applications ───────────────────────────
+
+enum LaunchMode {
+  /// embed the live deployment in a window
+  IFRAME
+  /// open the real site in a new tab
+  EXTERNAL
+  /// a component built into the OS (Terminal, Settings, Projects…)
+  INTERNAL
+  /// a self-contained demo that needs no live backend
+  DEMO
+}
+
+model Application {
+  id String @id @default(cuid())
+
+  /// null for system apps that aren't tied to a project
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// stable key the OS routes on — e.g. "terminal", "projects", "live-taas"
+  appKey String @unique
+  name   String
+  icon   String @default("folder")
+
+  launchMode LaunchMode @default(INTERNAL)
+  /// resolved at launch time, never compiled into the frontend (§6)
+  url        String?
+
+  enabled        Boolean @default(true)
+  desktopVisible Boolean @default(true)
+
+  /// desktop placement: workspace + grid cell index, not pixels
+  workspace Int @default(0)
+  cell      Int @default(0)
+
+  windowWidth  Int     @default(760)
+  windowHeight Int     @default(520)
+  resizable    Boolean @default(true)
+  maximizable  Boolean @default(true)
+  minimizable  Boolean @default(true)
+
+  healthChecks HealthCheck[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, desktopVisible, workspace])
+  @@map("applications")
+}
+
+// ───────────────────────────── assets ──────────────────────────────
+
+enum AssetKind {
+  ICON
+  SCREENSHOT
+  LOGO
+  ARCHITECTURE
+  VIDEO
+  OTHER
+}
+
+model Asset {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  kind  AssetKind @default(SCREENSHOT)
+  url   String
+  alt   String?
+  order Int       @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId, kind])
+  @@map("assets")
+}
+
+// ────────────────────── AI import pipeline (§9) ─────────────────────
+
+enum ImportStatus {
+  PENDING
+  ANALYZING
+  READY
+  APPROVED
+  FAILED
+}
+
+model ImportJob {
+  id String @id @default(cuid())
+
+  repoUrl String
+  liveUrl String?
+
+  status ImportStatus @default(PENDING)
+  /// the validated structured analysis, held for admin review before publish (§12)
+  analysis Json?
+  error    String?
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@map("import_jobs")
+}
+
+// ───────────────────────── health & audit ──────────────────────────
+
+model HealthCheck {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  url        String
+  ok         Boolean
+  statusCode Int?
+  latencyMs  Int?
+  checkedAt  DateTime @default(now())
+
+  @@index([applicationId, checkedAt])
+  @@map("health_checks")
+}
+
+model AuditLog {
+  id      String     @id @default(cuid())
+  actorId String?
+  actor   AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action   String
+  entity   String
+  entityId String?
+  meta     Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+// ──────────────────────── site configuration ───────────────────────
+
+/// Key/value so identity, links and CV path stop living in source.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ──────────────────── GitHub integration (§4) ───────────────────
+
+/// The connected GitHub account. Single row in practice — one admin.
+///
+/// Tokens are stored encrypted (AES-256-GCM) rather than as plaintext: this
+/// row grants read access to the owner's repositories, so a database dump,
+/// a stray log line or a screenshot of a DB browser must not be enough to
+/// use it.
+model GitHubConnection {
+  id String @id @default(cuid())
+
+  /// GitHub account this connection belongs to
+  accountLogin String
+  accountId    BigInt
+  avatarUrl    String?
+
+  /// App installation granting per-repository access
+  installationId BigInt?
+
+  /// AES-256-GCM ciphertext — never the raw token
+  accessTokenEnc  String
+  refreshTokenEnc String?
+  expiresAt       DateTime?
+
+  scopes String[]
+
+  /// set when GitHub rejects the credential, so the UI can ask for
+  /// reauthorization instead of failing repeatedly
+  invalidatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("github_connections")
+}
