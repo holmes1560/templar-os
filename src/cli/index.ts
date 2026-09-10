@@ -10,6 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const CONFIG_FILE_NAME = ".portfolio-agent.json";
 
@@ -230,7 +231,16 @@ function injectMcpServer(targetFile: string, serverName: string, serverConfig: a
 }
 
 function installSkillsToAgents(home: string, repoDir: string): string[] {
-  const sourceSkill = path.join(repoDir, "skills", "portfolio-management", "SKILL.md");
+  let sourceSkill = path.join(repoDir, "skills", "portfolio-management", "SKILL.md");
+  if (!fs.existsSync(sourceSkill)) {
+    try {
+      const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+      const pkgSkill = path.resolve(moduleDir, "../../skills/portfolio-management/SKILL.md");
+      if (fs.existsSync(pkgSkill)) {
+        sourceSkill = pkgSkill;
+      }
+    } catch {}
+  }
   if (!fs.existsSync(sourceSkill)) return [];
   const content = fs.readFileSync(sourceSkill, "utf-8");
 

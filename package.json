@@ -1,11 +1,11 @@
 {
-  "name": "@holmes1560/templar-os",
-  "version": "1.0.0",
+  "name": "templar-os",
+  "version": "1.0.1",
   "private": false,
   "description": "TEMPLAR OS interactive portfolio OS, agent CLI, and MCP server",
   "bin": {
-    "templar-os": "./dist/cli/index.mjs",
-    "portfolio-agent": "./dist/cli/index.mjs"
+    "templar-os": "dist/cli/index.mjs",
+    "portfolio-agent": "dist/cli/index.mjs"
   },
   "files": [
     "dist",
