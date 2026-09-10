@@ -465,7 +465,7 @@
       "order": 7,
       "visibility": "local",
       "embeddable": false,
-      "featured": false,
+      "featured": true,
       "clientWork": false
     },
     {
@@ -614,13 +614,13 @@
   ],
   "skills": [
     {
-      "id": "cmtvxrf50002acpgest42tvua",
+      "id": "cmtw414hz002acpqunqq4kae9",
       "name": "Languages",
       "slug": "languages",
       "order": 0,
       "skills": [
         {
-          "id": "cmtvxrf56002ccpge7jqhucc6",
+          "id": "cmtw414wg002ccpqumz1ptzg4",
           "name": "TypeScript",
           "technologies": [
             "TypeScript"
@@ -630,7 +630,7 @@
           "projectCount": 5
         },
         {
-          "id": "cmtvxrf5b002ecpgeyaji3543",
+          "id": "cmtw4157b002ecpququ3ejqj7",
           "name": "JavaScript",
           "technologies": [
             "JavaScript"
@@ -640,7 +640,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf5d002gcpge72ot3yl0",
+          "id": "cmtw415ei002gcpqukvyvs7rg",
           "name": "Python",
           "technologies": [
             "Python"
@@ -650,7 +650,7 @@
           "projectCount": 3
         },
         {
-          "id": "cmtvxrf5g002icpgeiy7m8rzd",
+          "id": "cmtw415lr002icpqujmnf9k7y",
           "name": "Java",
           "technologies": [
             "Java"
@@ -659,7 +659,7 @@
           "featured": false
         },
         {
-          "id": "cmtvxrf5j002kcpgeycpl77fn",
+          "id": "cmtw415sz002kcpquv4brzlpn",
           "name": "C / C++",
           "technologies": [
             "C / C++"
@@ -668,7 +668,7 @@
           "featured": false
         },
         {
-          "id": "cmtvxrf5m002mcpgeq89zn71w",
+          "id": "cmtw41607002mcpqupu5ihinc",
           "name": "SQL",
           "technologies": [
             "SQL"
@@ -679,13 +679,13 @@
       ]
     },
     {
-      "id": "cmtvxrf5p002ncpge8awu58zk",
+      "id": "cmtw4163t002ncpqutxt0u0ac",
       "name": "Frontend",
       "slug": "frontend",
       "order": 1,
       "skills": [
         {
-          "id": "cmtvxrf5t002pcpgelqkt3g7d",
+          "id": "cmtw416b0002pcpqu3k81hr5b",
           "name": "Next.js",
           "technologies": [
             "Next.js"
@@ -694,7 +694,7 @@
           "featured": true
         },
         {
-          "id": "cmtvxrf5v002rcpge63df8p1m",
+          "id": "cmtw416i9002rcpqulifr965n",
           "name": "React",
           "technologies": [
             "React"
@@ -704,7 +704,7 @@
           "projectCount": 2
         },
         {
-          "id": "cmtvxrf5y002tcpgeb46ono8o",
+          "id": "cmtw416pg002tcpqu5c0yzy2t",
           "name": "Tailwind CSS",
           "technologies": [
             "Tailwind CSS"
@@ -713,7 +713,7 @@
           "featured": true
         },
         {
-          "id": "cmtvxrf61002vcpge3rj9n0nt",
+          "id": "cmtw416wo002vcpqu6y5ywi7l",
           "name": "Vite",
           "technologies": [
             "Vite"
@@ -723,7 +723,7 @@
           "projectCount": 2
         },
         {
-          "id": "cmtvxrf63002xcpge7uimgf6j",
+          "id": "cmtw4173x002xcpqugbkv6usl",
           "name": "Recharts",
           "technologies": [
             "Recharts"
@@ -735,13 +735,13 @@
       ]
     },
     {
-      "id": "cmtvxrf64002ycpgenc7y70k0",
+      "id": "cmtw4177j002ycpqu7on3eupw",
       "name": "Backend",
       "slug": "backend",
       "order": 2,
       "skills": [
         {
-          "id": "cmtvxrf660030cpgeeokqmond",
+          "id": "cmtw417er0030cpqu64ijc7dy",
           "name": "NestJS",
           "technologies": [
             "NestJS"
@@ -751,7 +751,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf690032cpge7svkz20h",
+          "id": "cmtw417ly0032cpquk5ps7y7s",
           "name": "FastAPI",
           "technologies": [
             "FastAPI"
@@ -761,7 +761,7 @@
           "projectCount": 2
         },
         {
-          "id": "cmtvxrf6b0034cpge07a3y78j",
+          "id": "cmtw417t60034cpquvyxf2wdp",
           "name": "Express",
           "technologies": [
             "Express"
@@ -771,7 +771,7 @@
           "projectCount": 2
         },
         {
-          "id": "cmtvxrf6e0036cpgekbs2z184",
+          "id": "cmtw4180e0036cpqu8hicjccc",
           "name": "Spring Boot",
           "technologies": [
             "Spring Boot"
@@ -780,7 +780,7 @@
           "featured": false
         },
         {
-          "id": "cmtvxrf6h0038cpge2lfuf0ps",
+          "id": "cmtw4187m0038cpqug6c5wh2a",
           "name": "Prisma",
           "technologies": [
             "Prisma"
@@ -789,7 +789,7 @@
           "featured": false
         },
         {
-          "id": "cmtvxrf6j003acpgepdcnzghg",
+          "id": "cmtw418eu003acpqu4hnall84",
           "name": "SQLAlchemy",
           "technologies": [
             "SQLAlchemy"
@@ -801,13 +801,13 @@
       ]
     },
     {
-      "id": "cmtvxrf6l003bcpgegzpj3e68",
+      "id": "cmtw418ih003bcpqu8qiaioaa",
       "name": "Mobile",
       "slug": "mobile",
       "order": 3,
       "skills": [
         {
-          "id": "cmtvxrf6n003dcpgeiamuk8ol",
+          "id": "cmtw418pp003dcpqu9kepw9q5",
           "name": "React Native",
           "technologies": [
             "React Native"
@@ -817,7 +817,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf6q003fcpgemm823kac",
+          "id": "cmtw418ww003fcpqu437oqio1",
           "name": "Expo",
           "technologies": [
             "Expo"
@@ -829,13 +829,13 @@
       ]
     },
     {
-      "id": "cmtvxrf6r003gcpge9spayn5l",
+      "id": "cmtw4190j003gcpqu9rlnbjcl",
       "name": "Databases",
       "slug": "databases",
       "order": 4,
       "skills": [
         {
-          "id": "cmtvxrf6u003icpgezg6o01jf",
+          "id": "cmtw4197r003icpqur7xcuybs",
           "name": "PostgreSQL",
           "technologies": [
             "PostgreSQL"
@@ -845,7 +845,7 @@
           "projectCount": 5
         },
         {
-          "id": "cmtvxrf6x003kcpgeocb6dskk",
+          "id": "cmtw419f0003kcpqui5y8y8nj",
           "name": "MySQL",
           "technologies": [
             "MySQL"
@@ -855,7 +855,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf6z003mcpgee0wv3tiu",
+          "id": "cmtw419pt003mcpqufejadtsv",
           "name": "Supabase",
           "technologies": [
             "Supabase"
@@ -865,7 +865,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf72003ocpge5rbjbwyt",
+          "id": "cmtw419x2003ocpquei9qior8",
           "name": "Redis",
           "technologies": [
             "Redis"
@@ -877,13 +877,13 @@
       ]
     },
     {
-      "id": "cmtvxrf73003pcpge3b8uqtfv",
+      "id": "cmtw41a1l003pcpqurpt1x6p6",
       "name": "DevOps & Cloud",
       "slug": "devops-cloud",
       "order": 5,
       "skills": [
         {
-          "id": "cmtvxrf75003rcpgel1kjkrtg",
+          "id": "cmtw41a8u003rcpquj5wc6pgb",
           "name": "Docker",
           "technologies": [
             "Docker"
@@ -893,7 +893,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf77003tcpge3gvwm4ri",
+          "id": "cmtw41ag4003tcpqubiutnphx",
           "name": "Vercel",
           "technologies": [
             "Vercel"
@@ -903,7 +903,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf7a003vcpge4e3s84sr",
+          "id": "cmtw41and003vcpqu61rl6mn0",
           "name": "Render",
           "technologies": [
             "Render"
@@ -913,7 +913,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf7c003xcpgeoghdao25",
+          "id": "cmtw41aum003xcpqutr5fllu0",
           "name": "Railway",
           "technologies": [
             "Railway"
@@ -923,7 +923,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf7f003zcpgeeq7g3u99",
+          "id": "cmtw41b1w003zcpquj7mnaqwb",
           "name": "Firebase",
           "technologies": [
             "Firebase"
@@ -933,7 +933,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf7h0041cpge95hqc9fh",
+          "id": "cmtw41b940041cpqugr7bacye",
           "name": "MinIO",
           "technologies": [
             "MinIO"
@@ -945,13 +945,13 @@
       ]
     },
     {
-      "id": "cmtvxrf7i0042cpgexkxkfv61",
+      "id": "cmtw41bcq0042cpquuzm2tlds",
       "name": "Embedded & Hardware",
       "slug": "embedded-hardware",
       "order": 6,
       "skills": [
         {
-          "id": "cmtvxrf7l0044cpge5ogmixye",
+          "id": "cmtw41bjz0044cpqur0i0larl",
           "name": "ESP32",
           "technologies": [
             "ESP32"
@@ -961,7 +961,7 @@
           "projectCount": 2
         },
         {
-          "id": "cmtvxrf7n0046cpgedia36eds",
+          "id": "cmtw41br80046cpqugo2xe7lt",
           "name": "Arduino",
           "technologies": [
             "Arduino"
@@ -970,7 +970,7 @@
           "featured": true
         },
         {
-          "id": "cmtvxrf7p0048cpgecjdgslwd",
+          "id": "cmtw41byh0048cpqul3n4pckv",
           "name": "MFRC522 RFID",
           "technologies": [
             "MFRC522 RFID"
@@ -980,7 +980,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf7s004acpgeaefemfl4",
+          "id": "cmtw41c5q004acpqupzkaj7bc",
           "name": "I²C / SPI",
           "technologies": [
             "I²C / SPI"
@@ -989,7 +989,7 @@
           "featured": false
         },
         {
-          "id": "cmtvxrf7v004ccpgeoc9h0arb",
+          "id": "cmtw41ccz004ccpqul9v212t0",
           "name": "OpenSCAD",
           "technologies": [
             "OpenSCAD"
@@ -999,7 +999,7 @@
           "projectCount": 2
         },
         {
-          "id": "cmtvxrf7x004ecpgei59hfldf",
+          "id": "cmtw41ck8004ecpquygiwsk8v",
           "name": "3D printing",
           "technologies": [
             "3D printing"
@@ -1011,13 +1011,13 @@
       ]
     },
     {
-      "id": "cmtvxrf7z004fcpge5d3071sj",
+      "id": "cmtw41cnv004fcpqumr1cw73l",
       "name": "Security & Networking",
       "slug": "security-networking",
       "order": 7,
       "skills": [
         {
-          "id": "cmtvxrf81004hcpgej2h07buw",
+          "id": "cmtw41cv4004hcpqu967ec9kp",
           "name": "tcpdump",
           "technologies": [
             "tcpdump"
@@ -1027,7 +1027,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf83004jcpgeugzi97de",
+          "id": "cmtw41d2c004jcpquhvt439fg",
           "name": "Wireshark",
           "technologies": [
             "Wireshark"
@@ -1037,7 +1037,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf85004lcpgekyq6xhmu",
+          "id": "cmtw41d9r004lcpquvafwxn9l",
           "name": "mtr",
           "technologies": [
             "mtr"
@@ -1047,7 +1047,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf88004ncpge28kkqt2o",
+          "id": "cmtw41dgz004ncpquwdklhgj2",
           "name": "Kali Linux",
           "technologies": [
             "Kali Linux"
@@ -1057,7 +1057,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf8b004pcpgedx720vp7",
+          "id": "cmtw41do6004pcpquq6esaeiq",
           "name": "WebAuthn",
           "technologies": [
             "WebAuthn"
@@ -1067,7 +1067,7 @@
           "projectCount": 1
         },
         {
-          "id": "cmtvxrf8d004rcpge2lpo3mn6",
+          "id": "cmtw41dvk004rcpquvv9aenm8",
           "name": "Row Level Security",
           "technologies": [
             "Row Level Security"
@@ -1078,13 +1078,13 @@
       ]
     },
     {
-      "id": "cmtvxrf8f004scpgee6vpvglo",
+      "id": "cmtw41dz5004scpqu51sr5b6c",
       "name": "AI & Agents",
       "slug": "ai-agents",
       "order": 8,
       "skills": [
         {
-          "id": "cmtvxrf8h004ucpgeni5xz1uu",
+          "id": "cmtw41e79004ucpquifvdz7w2",
           "name": "Gemini API",
           "technologies": [
             "Gemini API"
@@ -1093,7 +1093,7 @@
           "featured": true
         },
         {
-          "id": "cmtvxrf8j004wcpgegdk2ped5",
+          "id": "cmtw41eej004wcpquk79zhi5m",
           "name": "Anthropic SDK",
           "technologies": [
             "Anthropic SDK"
@@ -1102,7 +1102,7 @@
           "featured": true
         },
         {
-          "id": "cmtvxrf8m004ycpgeanpvjzla",
+          "id": "cmtw41elr004ycpqu1ttfyawd",
           "name": "A2A / JSON-RPC 2.0",
           "technologies": [
             "A2A / JSON-RPC 2.0"
@@ -1111,7 +1111,7 @@
           "featured": true
         },
         {
-          "id": "cmtvxrf8o0050cpge6hkyo8h0",
+          "id": "cmtw41et10050cpqu8pikze1i",
           "name": "Model Context Protocol (MCP)",
           "technologies": [
             "Model Context Protocol (MCP)"
@@ -1124,7 +1124,7 @@
   ],
   "timeline": [
     {
-      "id": "cmtvxrfgc005ccpges50jubjk",
+      "id": "cmtw423nz005ccpqusjwiegr5",
       "title": "Started BSc Computer Science",
       "type": "university",
       "organization": "Kwame Nkrumah University of Science & Technology",
@@ -1150,7 +1150,7 @@
       "order": 10
     },
     {
-      "id": "cmtvxrfgf005dcpgeketh768p",
+      "id": "cmtw423va005dcpquakl2vpke",
       "title": "Built VoxSynq Communication Suite",
       "type": "project",
       "organization": "Personal Project",
@@ -1177,7 +1177,7 @@
       "order": 20
     },
     {
-      "id": "cmtvxrfgh005ecpge6u8rsj2r",
+      "id": "cmtw423yx005ecpquuiekmv70",
       "title": "HNG13 AI Backend Track",
       "type": "internship",
       "organization": "HNG Tech",
@@ -1203,7 +1203,7 @@
       "order": 30
     },
     {
-      "id": "cmtvxrfgi005fcpgepflrvup0",
+      "id": "cmtw4242k005fcpquojao0ybq",
       "title": "Architectural Evolution: AgriConnect",
       "type": "project",
       "organization": "Coursework / Project",
@@ -1230,7 +1230,7 @@
       "order": 40
     },
     {
-      "id": "cmtvxrfgk005gcpge3uugqcu6",
+      "id": "cmtw42467005gcpqu6z86bgel",
       "title": "CWA Academic Calculator & Planner",
       "type": "project",
       "organization": "Group 2, KNUST",
@@ -1256,7 +1256,7 @@
       "order": 50
     },
     {
-      "id": "cmtvxrfgm005hcpgex5x4hqly",
+      "id": "cmtw424a2005hcpquwbfrec6y",
       "title": "Commercial Retail POS: QuickPOS",
       "type": "project",
       "organization": "Commercial Client",
@@ -1283,7 +1283,7 @@
       "order": 60
     },
     {
-      "id": "cmtvxrfgo005icpge6iofi88f",
+      "id": "cmtw424do005icpqunhaylzcm",
       "title": "Olympus Gate: Embedded Access Control",
       "type": "project",
       "organization": "Group 16, KNUST",
@@ -1311,7 +1311,7 @@
       "order": 70
     },
     {
-      "id": "cmtvxrfgq005jcpgetgsryyzt",
+      "id": "cmtw424hb005jcpquqdswkzpa",
       "title": "TaaS: Trust as a Service Escrow Engine",
       "type": "project",
       "organization": "Group 2, KNUST",
@@ -1339,7 +1339,7 @@
       "order": 80
     },
     {
-      "id": "cmtvxrfgr005kcpgeo6emku8j",
+      "id": "cmtw424kz005kcpqum2ojs5jb",
       "title": "Telecel Network Latency Forensics",
       "type": "milestone",
       "organization": "Network Research",
@@ -1366,7 +1366,7 @@
       "order": 90
     },
     {
-      "id": "cmtvxrfgt005lcpgevwl899n4",
+      "id": "cmtw424ol005lcpqu0t36mfcf",
       "title": "TEMPLAR OS Portfolio & Agent Platform",
       "type": "milestone",
       "organization": "Personal Platform",
@@ -1396,7 +1396,7 @@
   "experience": [],
   "education": [
     {
-      "id": "cmtvxrfgx005mcpgedtwx6mol",
+      "id": "cmtw424zd005mcpquh1tosnj7",
       "institution": "Kwame Nkrumah University of Science and Technology (KNUST)",
       "degree": "BSc Computer Science",
       "fieldOfStudy": "Computer Science",
@@ -1416,7 +1416,7 @@
   "achievements": [],
   "socialLinks": [
     {
-      "id": "cmtvxrfh1005ncpgefa7nw9fe",
+      "id": "cmtw425dt005ncpquxgbag8ln",
       "platform": "GitHub",
       "label": "GitHub",
       "url": "https://github.com/holmes1560",
@@ -1425,7 +1425,7 @@
       "order": 0
     },
     {
-      "id": "cmtvxrfh4005ocpges0lxpglj",
+      "id": "cmtw425l4005ocpquo471979p",
       "platform": "LinkedIn",
       "label": "LinkedIn",
       "url": "https://linkedin.com/in/asenso-owusu-ansah",
@@ -1433,7 +1433,7 @@
       "order": 1
     },
     {
-      "id": "cmtvxrfh6005pcpgeq6naecbc",
+      "id": "cmtw425sa005pcpquam0s56kh",
       "platform": "Email",
       "label": "Email",
       "url": "mailto:owusuansahasenso1560@gmail.com",
@@ -1508,19 +1508,6 @@
       "minimizable": true
     },
     {
-      "appKey": "timeline",
-      "name": "Career Timeline",
-      "icon": "pulse",
-      "launchMode": "internal",
-      "workspace": 0,
-      "cell": 5,
-      "width": 900,
-      "height": 580,
-      "resizable": true,
-      "maximizable": true,
-      "minimizable": true
-    },
-    {
       "appKey": "projects",
       "name": "Projects",
       "icon": "folder",
@@ -1534,12 +1521,25 @@
       "minimizable": true
     },
     {
+      "appKey": "timeline",
+      "name": "Career Timeline",
+      "icon": "pulse",
+      "launchMode": "internal",
+      "workspace": 1,
+      "cell": 1,
+      "width": 900,
+      "height": 580,
+      "resizable": true,
+      "maximizable": true,
+      "minimizable": true
+    },
+    {
       "appKey": "files",
       "name": "Files",
       "icon": "files",
       "launchMode": "internal",
       "workspace": 1,
-      "cell": 1,
+      "cell": 2,
       "width": 820,
       "height": 560,
       "resizable": true,
@@ -1553,7 +1553,7 @@
       "launchMode": "external",
       "url": "https://github.com/holmes1560",
       "workspace": 1,
-      "cell": 2,
+      "cell": 3,
       "width": 760,
       "height": 520,
       "resizable": true,
@@ -1614,14 +1614,6 @@
     }
   ],
   "settings": {
-    "gemini_api_key_enc": "v1.mf9ch10hAAZnBkUn.KTcHVbO5rA7xmd2PQLkQog.FM9dBDlbAbb1oZJPOwS7xnMSmSj5iVo8-FSzh-XUnJmq2U2BBmBApHlwHhNhN4LyjaJUbD0",
-    "ai_secondary_model": "claude-3-7-sonnet-latest",
-    "ai_secondary_provider": "none",
-    "custom_base_url": "https://api.together.xyz/v1",
-    "custom_provider_name": "Custom AI Gateway",
-    "ai_primary_provider": "gemini",
-    "ai_provider": "gemini",
-    "ai_primary_model": "gemini-3.6-flash",
     "site.name": "Asenso Owusu Ansah",
     "site.shortName": "Asenso",
     "site.system": "TEMPLAR OS",
@@ -1635,5 +1627,5 @@
     "site.linkedin": "https://linkedin.com/in/asenso-owusu-ansah",
     "site.resumePath": ""
   },
-  "generatedAt": "2026-09-10T22:00:50.866Z"
+  "generatedAt": "2026-09-10T22:40:46.978Z"
 }
