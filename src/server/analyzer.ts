@@ -581,7 +581,7 @@ export async function testAiModelConnection(
 
       const isFlash36 = normalizedModel.includes("3.6-flash");
       const requestBody: Record<string, unknown> = {
-        contents: [{ parts: [{ text: "Respond in one word: ONLINE" }] }],
+        contents: [{ parts: [{ text: "Echo back the single word: CONNECTED" }] }],
         generationConfig: {
           maxOutputTokens: 15,
           ...(isFlash36 ? { thinkingConfig: { thinkingLevel: "MINIMAL" } } : {}),
@@ -609,11 +609,7 @@ export async function testAiModelConnection(
         return { ok: false, error: data.error?.message || `Google API status ${res.status}` };
       }
 
-      const text =
-        data.candidates?.[0]?.content?.parts?.find((p) => !p.thought)?.text?.trim() ||
-        data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-        "ONLINE";
-      return { ok: true, latencyMs: latency, message: `Model responded in ${latency}ms ("${text}")` };
+      return { ok: true, latencyMs: latency, message: `Connected successfully in ${latency}ms` };
     } catch (err: unknown) {
       if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
         return {
@@ -633,14 +629,13 @@ export async function testAiModelConnection(
 
     try {
       const client = new Anthropic({ apiKey: key, timeout: 30000 });
-      const response = await client.messages.create({
+      await client.messages.create({
         model: normalizedModel,
         max_tokens: 10,
-        messages: [{ role: "user", content: "Respond in one word: ONLINE" }],
+        messages: [{ role: "user", content: "Echo back the single word: CONNECTED" }],
       });
       const latency = Date.now() - t0;
-      const text = response.content[0]?.type === "text" ? response.content[0].text.trim() : "ONLINE";
-      return { ok: true, latencyMs: latency, message: `Model responded in ${latency}ms ("${text}")` };
+      return { ok: true, latencyMs: latency, message: `Connected successfully in ${latency}ms` };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Anthropic test failed.";
       return { ok: false, error: msg };
@@ -662,18 +657,18 @@ export async function testAiModelConnection(
       timeout: 30000,
     });
 
-    const response = await client.chat.completions.create({
+    await client.chat.completions.create({
       model: normalizedModel,
       max_tokens: 10,
-      messages: [{ role: "user", content: "Respond in one word: ONLINE" }],
+      messages: [{ role: "user", content: "Echo back the single word: CONNECTED" }],
     });
 
     const latency = Date.now() - t0;
-    const text = response.choices[0]?.message?.content?.trim() || "ONLINE";
+    const providerName = PROVIDERS_CATALOG[provider]?.name || "Provider";
     return {
       ok: true,
       latencyMs: latency,
-      message: `${PROVIDERS_CATALOG[provider]?.name || "Provider"} responded in ${latency}ms ("${text}")`,
+      message: `${providerName} connected successfully in ${latency}ms`,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Test connection failed.";
