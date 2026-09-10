@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/lib/db";
 import { encryptSecret, decryptSecret } from "./crypto";
+import { selectFiles, type RepoEntry } from "./repo-files";
 
 /**
  * GitHub App integration.
@@ -202,7 +203,11 @@ async function call<T>(path: string, init?: RequestInit): Promise<GhResult<T>> {
   if (res.status === 404) return { ok: false, error: "Not found, or this app has no access to it." };
   if (!res.ok) return { ok: false, error: `GitHub returned ${res.status}.` };
 
-  return { ok: true, data: (await res.json()) as T };
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return { ok: true, data: (await res.json()) as T };
+  }
+  return { ok: true, data: (await res.text()) as unknown as T };
 }
 
 export interface GhUser { login: string; id: number; avatar_url: string }
@@ -235,7 +240,23 @@ export interface GhRepo {
   language: string | null;
   default_branch: string;
   updated_at: string;
-  owner: { login: string };
+  owner: { login: string; avatar_url?: string };
+}
+
+export interface GhTreeEntry {
+  path: string;
+  mode: string;
+  type: "blob" | "tree";
+  sha: string;
+  size?: number;
+  url: string;
+}
+
+export interface GhTreeResponse {
+  sha: string;
+  url: string;
+  tree: GhTreeEntry[];
+  truncated: boolean;
 }
 
 /**
@@ -250,4 +271,53 @@ export async function listRepos(page = 1, perPage = 30) {
 
 export async function getRepo(owner: string, repo: string) {
   return call<GhRepo>(`/repos/${owner}/${repo}`);
+}
+
+export async function getRepoTree(owner: string, repo: string, ref: string) {
+  return call<GhTreeResponse>(`/repos/${owner}/${repo}/git/trees/${ref}?recursive=1`);
+}
+
+export async function getRawFile(owner: string, repo: string, path: string, ref?: string) {
+  const query = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+  return call<string>(`/repos/${owner}/${repo}/contents/${path}${query}`, {
+    headers: { Accept: "application/vnd.github.raw" },
+  });
+}
+
+export async function fetchAnalyzableFiles(
+  owner: string,
+  repo: string,
+  branch?: string
+): Promise<GhResult<{ files: { path: string; content: string }[]; headSha: string }>> {
+  let targetBranch = branch;
+  if (!targetBranch) {
+    const repoRes = await getRepo(owner, repo);
+    if (!repoRes.ok) return repoRes;
+    targetBranch = repoRes.data.default_branch || "main";
+  }
+
+  const treeRes = await getRepoTree(owner, repo, targetBranch);
+  if (!treeRes.ok) return treeRes;
+
+  const selected = selectFiles(treeRes.data.tree as RepoEntry[]);
+  const fetched: { path: string; content: string }[] = [];
+
+  for (const item of selected) {
+    try {
+      const fileRes = await getRawFile(owner, repo, item.path, targetBranch);
+      if (fileRes.ok && typeof fileRes.data === "string") {
+        fetched.push({ path: item.path, content: fileRes.data });
+      }
+    } catch {
+      // skip unreadable file
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      files: fetched,
+      headSha: treeRes.data.sha,
+    },
+  };
 }

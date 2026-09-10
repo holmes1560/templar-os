@@ -1,8 +1,10 @@
 allowBuilds:
+  '@google/genai': true
   '@prisma/client': set this to true or false
   '@prisma/engines': set this to true or false
   esbuild: set this to true or false
   prisma: set this to true or false
+  protobufjs: true
   unrs-resolver: set this to true or false
 # Prisma's postinstall fetches query engines and generates the client.
 # Without this, pnpm blocks the build script and @prisma/client is never generated.

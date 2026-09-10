@@ -2,7 +2,10 @@ import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
+import { db } from "@/lib/db";
+import { encryptSecret, decryptSecret } from "./crypto";
 
 /**
  * Turns curated repository files into structured portfolio metadata.
@@ -22,7 +25,10 @@ import { z } from "zod";
  *  admin still has to approve them.
  */
 
-const MODEL = "claude-opus-4-8";
+export const GEMINI_MODEL = "gemini-2.5-flash";
+export const ANTHROPIC_MODEL = "claude-3-7-sonnet-latest";
+
+export type AiProvider = "gemini" | "anthropic";
 
 /* ─────────────────────────── output schema ─────────────────────────── */
 
@@ -101,65 +107,206 @@ ${body}
 Produce the structured analysis.`;
 }
 
+/* ────────────────────────── provider settings ──────────────────────── */
+
+export async function resolveGeminiKey(): Promise<string | null> {
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+  if (process.env.GOOGLE_API_KEY) return process.env.GOOGLE_API_KEY;
+  try {
+    const s = await db.setting.findUnique({ where: { key: "gemini_api_key_enc" } });
+    if (s?.value) return decryptSecret(s.value);
+  } catch {}
+  return null;
+}
+
+export async function resolveAnthropicKey(): Promise<string | null> {
+  if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
+  try {
+    const s = await db.setting.findUnique({ where: { key: "anthropic_api_key_enc" } });
+    if (s?.value) return decryptSecret(s.value);
+  } catch {}
+  return null;
+}
+
+export async function getActiveAiProvider(): Promise<AiProvider> {
+  try {
+    const s = await db.setting.findUnique({ where: { key: "ai_provider" } });
+    if (s?.value === "anthropic" || s?.value === "gemini") {
+      return s.value;
+    }
+  } catch {}
+  return "gemini";
+}
+
+export async function setActiveAiProvider(provider: AiProvider): Promise<void> {
+  await db.setting.upsert({
+    where: { key: "ai_provider" },
+    update: { value: provider },
+    create: { key: "ai_provider", value: provider },
+  });
+}
+
+export async function saveAiApiKey(provider: AiProvider, key: string): Promise<void> {
+  const encKey = provider === "gemini" ? "gemini_api_key_enc" : "anthropic_api_key_enc";
+  await db.setting.upsert({
+    where: { key: encKey },
+    update: { value: encryptSecret(key.trim()) },
+    create: { key: encKey, value: encryptSecret(key.trim()) },
+  });
+}
+
+export async function getAiConfigStatus() {
+  const activeProvider = await getActiveAiProvider();
+  const geminiKey = await resolveGeminiKey();
+  const anthropicKey = await resolveAnthropicKey();
+
+  const geminiConfigured = Boolean(geminiKey);
+  const anthropicConfigured = Boolean(anthropicKey);
+
+  return {
+    activeProvider,
+    gemini: {
+      configured: geminiConfigured,
+      model: GEMINI_MODEL,
+      keySource: process.env.GEMINI_API_KEY ? ("env" as const) : geminiConfigured ? ("db" as const) : ("none" as const),
+    },
+    anthropic: {
+      configured: anthropicConfigured,
+      model: ANTHROPIC_MODEL,
+      keySource: process.env.ANTHROPIC_API_KEY ? ("env" as const) : anthropicConfigured ? ("db" as const) : ("none" as const),
+    },
+    isReady: activeProvider === "gemini" ? geminiConfigured : anthropicConfigured,
+  };
+}
+
+export async function analyzerConfigured() {
+  const status = await getAiConfigStatus();
+  return status.isReady;
+}
+
 /* ──────────────────────────── the call ────────────────────────────── */
 
 export type AnalyzeResult =
-  | { ok: true; analysis: Analysis }
+  | { ok: true; analysis: Analysis; provider: AiProvider }
   | { ok: false; error: string; retryable: boolean };
-
-export function analyzerConfigured() {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
-}
 
 export async function analyzeRepository(
   repo: { owner: string; name: string; description?: string | null },
-  files: { path: string; content: string }[]
+  files: { path: string; content: string }[],
+  providerOverride?: AiProvider
 ): Promise<AnalyzeResult> {
-  if (!analyzerConfigured()) {
-    return {
-      ok: false,
-      retryable: false,
-      error: "ANTHROPIC_API_KEY is not set — add it to .env.local to enable the importer.",
-    };
-  }
   if (files.length === 0) {
     return { ok: false, retryable: false, error: "No analysable files were found in that repository." };
   }
 
-  const client = new Anthropic();
+  const provider = providerOverride ?? (await getActiveAiProvider());
+
+  if (provider === "gemini") {
+    return analyzeWithGemini(repo, files);
+  } else {
+    return analyzeWithAnthropic(repo, files);
+  }
+}
+
+async function analyzeWithGemini(
+  repo: { owner: string; name: string; description?: string | null },
+  files: { path: string; content: string }[]
+): Promise<AnalyzeResult> {
+  const apiKey = await resolveGeminiKey();
+  if (!apiKey) {
+    return {
+      ok: false,
+      retryable: false,
+      error: "Google Gemini API key is not configured. Add GEMINI_API_KEY to .env or configure it in Settings.",
+    };
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const prompt = buildUserMessage(repo, files);
+
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt,
+      config: {
+        systemInstruction: SYSTEM,
+        responseMimeType: "application/json",
+      },
+    });
+
+    const rawText = response.text?.trim();
+    if (!rawText) {
+      return { ok: false, retryable: true, error: "Gemini returned an empty response. Try again." };
+    }
+
+    const cleanedJson = rawText.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
+    const jsonParsed = JSON.parse(cleanedJson);
+    const validated = AnalysisSchema.parse(jsonParsed);
+
+    return { ok: true, analysis: validated, provider: "gemini" };
+  } catch (err: unknown) {
+    const e = err as { status?: number; message?: string };
+    if (e?.status === 429 || e?.message?.includes("RESOURCE_EXHAUSTED")) {
+      return { ok: false, retryable: true, error: "Gemini rate limit reached. Try again shortly." };
+    }
+    if (e?.status === 403 || e?.status === 401 || e?.message?.includes("API_KEY_INVALID")) {
+      return { ok: false, retryable: false, error: "Gemini API key was rejected." };
+    }
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        retryable: true,
+        error: `Gemini response schema mismatch: ${err.issues[0]?.message || err.message}`,
+      };
+    }
+    return { ok: false, retryable: true, error: e?.message || "Gemini analysis failed unexpectedly." };
+  }
+}
+
+async function analyzeWithAnthropic(
+  repo: { owner: string; name: string; description?: string | null },
+  files: { path: string; content: string }[]
+): Promise<AnalyzeResult> {
+  const apiKey = await resolveAnthropicKey();
+  if (!apiKey) {
+    return {
+      ok: false,
+      retryable: false,
+      error: "Anthropic API key is not configured. Add ANTHROPIC_API_KEY to .env or configure it in Settings.",
+    };
+  }
+
+  const client = new Anthropic({ apiKey });
 
   try {
     const response = await client.messages.parse({
-      model: MODEL,
+      model: ANTHROPIC_MODEL,
       max_tokens: 8000,
-      // the analysis is a judgement call over several files — worth thinking about
       thinking: { type: "adaptive" },
       system: SYSTEM,
       messages: [{ role: "user", content: buildUserMessage(repo, files) }],
       output_config: { format: zodOutputFormat(AnalysisSchema) },
     });
 
-    // Never trust raw model output (§11) — the SDK parses against the schema,
-    // and parsed_output is null when that fails.
     const parsed = response.parsed_output;
     if (!parsed) {
       return { ok: false, retryable: true, error: "The analysis did not match the expected shape. Try again." };
     }
 
-    return { ok: true, analysis: parsed };
+    return { ok: true, analysis: parsed, provider: "anthropic" };
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
-      return { ok: false, retryable: true, error: "Rate limited by the API. Try again shortly." };
+      return { ok: false, retryable: true, error: "Rate limited by Anthropic API. Try again shortly." };
     }
     if (err instanceof Anthropic.AuthenticationError) {
       return { ok: false, retryable: false, error: "ANTHROPIC_API_KEY was rejected." };
     }
     if (err instanceof Anthropic.APIConnectionError) {
-      return { ok: false, retryable: true, error: "Could not reach the API." };
+      return { ok: false, retryable: true, error: "Could not reach Anthropic API." };
     }
     if (err instanceof Anthropic.APIError) {
-      return { ok: false, retryable: err.status >= 500, error: `Analysis failed (${err.status}).` };
+      return { ok: false, retryable: err.status >= 500, error: `Anthropic analysis failed (${err.status}).` };
     }
-    return { ok: false, retryable: true, error: "Analysis failed unexpectedly." };
+    return { ok: false, retryable: true, error: "Anthropic analysis failed unexpectedly." };
   }
 }

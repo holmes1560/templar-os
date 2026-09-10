@@ -22,12 +22,20 @@ export default async function ProjectsList() {
             {projects.length} total. Changes appear on the portfolio immediately.
           </p>
         </div>
-        <Link
-          href="/admin/projects/new"
-          className="pressable shrink-0 rounded-[var(--os-r-chip)] bg-[var(--os-accent)] px-3 py-2 text-sm font-medium text-[var(--os-accent-fg)]"
-        >
-          Add project
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/projects/import"
+            className="pressable shrink-0 rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-2)] px-3 py-2 text-sm font-medium text-[var(--os-fg)] hover:bg-[var(--os-surface-3)]"
+          >
+            Import from GitHub
+          </Link>
+          <Link
+            href="/admin/projects/new"
+            className="pressable shrink-0 rounded-[var(--os-r-chip)] bg-[var(--os-accent)] px-3 py-2 text-sm font-medium text-[var(--os-accent-fg)]"
+          >
+            Add project
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-[var(--os-r-panel)] border border-[var(--os-line)]">

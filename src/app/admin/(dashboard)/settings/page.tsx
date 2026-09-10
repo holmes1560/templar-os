@@ -4,6 +4,12 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin, audit } from "@/server/auth";
 import { connectionStatus } from "@/server/github";
+import {
+  getAiConfigStatus,
+  setActiveAiProvider,
+  saveAiApiKey,
+  type AiProvider,
+} from "@/server/analyzer";
 
 export const dynamic = "force-dynamic";
 
@@ -16,17 +22,19 @@ const MESSAGES: Record<string, { tone: "ok" | "warn" | "crit"; text: string }> =
   exchange_failed: { tone: "crit", text: "GitHub rejected the authorization. Check the client secret." },
   identify_failed: { tone: "crit", text: "Connected, but the account could not be identified. Try again." },
   disconnected: { tone: "ok", text: "GitHub disconnected. Your projects are untouched." },
+  ai_saved: { tone: "ok", text: "AI analyzer settings saved." },
 };
 
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ github?: string }>;
+  searchParams: Promise<{ github?: string; ai?: string }>;
 }) {
   await requireAdmin();
-  const { github } = await searchParams;
+  const { github, ai } = await searchParams;
   const status = await connectionStatus();
-  const msg = github ? MESSAGES[github] : undefined;
+  const aiStatus = await getAiConfigStatus();
+  const msg = github ? MESSAGES[github] : ai ? MESSAGES[ai] : undefined;
 
   async function disconnectGitHub() {
     "use server";
@@ -36,6 +44,23 @@ export default async function SettingsPage({
     await audit(user.id, "github.disconnected", "GitHubConnection");
     revalidatePath("/admin/settings");
     redirect("/admin/settings?github=disconnected");
+  }
+
+  async function updateAiProvider(formData: FormData) {
+    "use server";
+    const user = await requireAdmin();
+    const provider = formData.get("provider") as AiProvider;
+    if (provider === "gemini" || provider === "anthropic") {
+      await setActiveAiProvider(provider);
+      await audit(user.id, "ai.set_provider", "Setting", provider);
+    }
+    const apiKey = formData.get("apiKey") as string | null;
+    if (apiKey && apiKey.trim().length > 0) {
+      await saveAiApiKey(provider, apiKey.trim());
+      await audit(user.id, "ai.save_key", "Setting", provider);
+    }
+    revalidatePath("/admin/settings");
+    redirect("/admin/settings?ai=ai_saved");
   }
 
   const linkedProjects = await db.project.count({ where: { githubRepoId: { not: null } } });
@@ -137,7 +162,7 @@ export default async function SettingsPage({
                 </button>
               </form>
               <Link
-                href="/admin/projects/new"
+                href="/admin/projects/import"
                 className="ml-auto self-center text-xs text-[var(--os-fg-muted)] hover:text-[var(--os-accent)]"
               >
                 Import a repository →
@@ -149,6 +174,111 @@ export default async function SettingsPage({
             </p>
           </>
         )}
+      </section>
+
+      <section className="mt-6 rounded-[var(--os-r-panel)] border border-[var(--os-line)] bg-[var(--os-surface-1)] p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-medium text-[var(--os-fg)]">AI Project Analyzer</h2>
+            <p className="mt-0.5 text-xs text-[var(--os-fg-muted)]">
+              Model provider used for automated repository analysis and metadata extraction.
+            </p>
+          </div>
+          <span className={`shrink-0 rounded-[var(--os-r-chip)] border px-2 py-1 font-mono text-[0.65rem] ${
+            aiStatus.isReady
+              ? "text-[var(--os-ok)] bg-[var(--os-ok)]/10 border-[var(--os-ok)]/30"
+              : "text-[var(--os-warn)] bg-[var(--os-warn)]/10 border-[var(--os-warn)]/30"
+          }`}>
+            ● {aiStatus.isReady ? `Ready (${aiStatus.activeProvider})` : "Key needed"}
+          </span>
+        </div>
+
+        <form action={updateAiProvider} className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Gemini Option */}
+            <label className={`relative flex cursor-pointer flex-col rounded-[var(--os-r-chip)] border p-3.5 transition-colors ${
+              aiStatus.activeProvider === "gemini"
+                ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.05]"
+                : "border-[var(--os-line)] bg-[var(--os-surface-2)] hover:border-[var(--os-line-strong)]"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="provider"
+                    value="gemini"
+                    defaultChecked={aiStatus.activeProvider === "gemini"}
+                    className="accent-[var(--os-accent)]"
+                  />
+                  <span className="font-mono text-xs font-semibold text-[var(--os-fg)]">Google Gemini (Default)</span>
+                </div>
+                <span className="font-mono text-[0.65rem] text-[var(--os-fg-faint)]">{aiStatus.gemini.model}</span>
+              </div>
+              <p className="mt-2 text-[0.72rem] leading-relaxed text-[var(--os-fg-muted)]">
+                Fast, cost-effective structured JSON analysis using the latest Gemini models.
+              </p>
+              <div className="mt-2.5 flex items-center gap-1.5 font-mono text-[0.68rem]">
+                <span className={aiStatus.gemini.configured ? "text-[var(--os-ok)]" : "text-[var(--os-warn)]"}>
+                  {aiStatus.gemini.configured ? `✓ Configured (${aiStatus.gemini.keySource})` : "⚠ Key missing"}
+                </span>
+              </div>
+            </label>
+
+            {/* Anthropic Option */}
+            <label className={`relative flex cursor-pointer flex-col rounded-[var(--os-r-chip)] border p-3.5 transition-colors ${
+              aiStatus.activeProvider === "anthropic"
+                ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.05]"
+                : "border-[var(--os-line)] bg-[var(--os-surface-2)] hover:border-[var(--os-line-strong)]"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="provider"
+                    value="anthropic"
+                    defaultChecked={aiStatus.activeProvider === "anthropic"}
+                    className="accent-[var(--os-accent)]"
+                  />
+                  <span className="font-mono text-xs font-semibold text-[var(--os-fg)]">Anthropic Claude</span>
+                </div>
+                <span className="font-mono text-[0.65rem] text-[var(--os-fg-faint)]">{aiStatus.anthropic.model}</span>
+              </div>
+              <p className="mt-2 text-[0.72rem] leading-relaxed text-[var(--os-fg-muted)]">
+                Deep architectural analysis using Claude with extended thinking and Zod output schemas.
+              </p>
+              <div className="mt-2.5 flex items-center gap-1.5 font-mono text-[0.68rem]">
+                <span className={aiStatus.anthropic.configured ? "text-[var(--os-ok)]" : "text-[var(--os-warn)]"}>
+                  {aiStatus.anthropic.configured ? `✓ Configured (${aiStatus.anthropic.keySource})` : "⚠ Key missing"}
+                </span>
+              </div>
+            </label>
+          </div>
+
+          <div className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] p-3.5">
+            <label htmlFor="apiKey" className="block text-xs font-medium text-[var(--os-fg)]">
+              API Key (Optional — override or set for the chosen provider)
+            </label>
+            <p className="mt-0.5 text-[0.68rem] text-[var(--os-fg-muted)]">
+              Keys can also be placed in <span className="font-mono">.env</span> as <span className="font-mono">GEMINI_API_KEY</span> or <span className="font-mono">ANTHROPIC_API_KEY</span>. Any key saved here is encrypted at rest (AES-256-GCM).
+            </p>
+            <input
+              id="apiKey"
+              name="apiKey"
+              type="password"
+              placeholder="Paste new API key to save (e.g. AIzaSy... or sk-ant-...)"
+              className="mt-2 w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-1.5 font-mono text-xs text-[var(--os-fg)] placeholder:text-[var(--os-fg-faint)] focus:border-[var(--os-accent)] focus:outline-none"
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="pressable rounded-[var(--os-r-chip)] bg-[var(--os-accent)] px-4 py-2 text-xs font-medium text-[var(--os-accent-fg)]"
+            >
+              Save AI Settings
+            </button>
+          </div>
+        </form>
       </section>
     </>
   );
