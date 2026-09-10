@@ -134,30 +134,149 @@ async function cmdStatus() {
   }
 }
 
+function getTargetConfigs(target: string) {
+  const home = process.env.HOME || process.env.USERPROFILE || "";
+  const isWin = process.platform === "win32";
+  const isMac = process.platform === "darwin";
+
+  const targets: { name: string; path: string }[] = [];
+
+  const claudeDesktopPath = isWin
+    ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), "Claude", "claude_desktop_config.json")
+    : isMac
+    ? path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+    : path.join(home, ".config", "Claude", "claude_desktop_config.json");
+
+  const claudeCodePath = path.join(home, ".claude.json");
+  const cursorGlobalPath = path.join(home, ".cursor", "mcp.json");
+  const cursorLocalPath = path.join(process.cwd(), ".cursor", "mcp.json");
+  const antigravityPaths = [
+    path.join(home, ".gemini", "antigravity", "mcp_config.json"),
+    path.join(home, ".gemini", "config", "mcp_config.json"),
+    path.join(home, ".gemini", "antigravity-ide", "mcp_config.json"),
+  ];
+  const windsurfPath = isWin
+    ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), "Codeium", "windsurf", "mcp_config.json")
+    : isMac
+    ? path.join(home, "Library", "Application Support", "Windsurf", "mcp_config.json")
+    : path.join(home, ".codeium", "windsurf", "mcp_config.json");
+
+  const addClaudeDesktop = () => targets.push({ name: "Claude Desktop", path: claudeDesktopPath });
+  const addClaudeCode = () => targets.push({ name: "Claude Code CLI", path: claudeCodePath });
+  const addCursor = () => {
+    targets.push({ name: "Cursor (Global)", path: cursorGlobalPath });
+    if (fs.existsSync(path.dirname(cursorLocalPath))) {
+      targets.push({ name: "Cursor (Project)", path: cursorLocalPath });
+    }
+  };
+  const addAntigravity = () => {
+    for (const agPath of antigravityPaths) {
+      targets.push({ name: `Antigravity (${path.basename(path.dirname(agPath))})`, path: agPath });
+    }
+  };
+  const addWindsurf = () => targets.push({ name: "Windsurf", path: windsurfPath });
+
+  switch (target.toLowerCase()) {
+    case "claude":
+    case "claudedesktop":
+      addClaudeDesktop();
+      break;
+    case "claude-code":
+    case "claudecode":
+      addClaudeCode();
+      break;
+    case "cursor":
+      addCursor();
+      break;
+    case "antigravity":
+    case "gemini":
+      addAntigravity();
+      break;
+    case "windsurf":
+      addWindsurf();
+      break;
+    case "all":
+    default:
+      addClaudeDesktop();
+      addClaudeCode();
+      addCursor();
+      addAntigravity();
+      addWindsurf();
+      break;
+  }
+
+  return targets;
+}
+
+function injectMcpServer(targetFile: string, serverName: string, serverConfig: any): boolean {
+  try {
+    let data: any = {};
+    if (fs.existsSync(targetFile)) {
+      try {
+        data = JSON.parse(fs.readFileSync(targetFile, "utf-8"));
+      } catch {
+        data = {};
+      }
+    } else {
+      fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+    }
+    if (!data.mcpServers) data.mcpServers = {};
+    data.mcpServers[serverName] = serverConfig;
+    fs.writeFileSync(targetFile, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function installSkillsToAgents(home: string, repoDir: string): string[] {
+  const sourceSkill = path.join(repoDir, "skills", "portfolio-management", "SKILL.md");
+  if (!fs.existsSync(sourceSkill)) return [];
+  const content = fs.readFileSync(sourceSkill, "utf-8");
+
+  const destinations = [
+    path.join(home, ".gemini", "config", "skills", "portfolio-management", "SKILL.md"),
+    path.join(home, ".config", "skills", "portfolio-management", "SKILL.md"),
+  ];
+
+  const installed: string[] = [];
+  for (const dest of destinations) {
+    try {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, content, "utf-8");
+      installed.push(dest);
+    } catch {}
+  }
+  return installed;
+}
+
 async function cmdInstall(args: string[]) {
   console.log(`\n=== TEMPLAR OS One-Command Agent Installer ===\n`);
 
-  let apiUrl = "http://localhost:3100";
+  let targetAgent = "all";
+  let apiUrl = "";
   let apiKey = "";
-  let targetAgent = "generic";
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--url" && args[i + 1]) apiUrl = args[++i];
-    if (args[i] === "--key" && args[i + 1]) apiKey = args[++i];
-    if (args[i] === "--agent" && args[i + 1]) targetAgent = args[++i];
+    const arg = args[i];
+    if (arg === "--url" && args[i + 1]) apiUrl = args[++i];
+    else if ((arg === "--key" || arg === "--api-key") && args[i + 1]) apiKey = args[++i];
+    else if (arg === "--agent" && args[i + 1]) targetAgent = args[++i];
+    else if (!arg.startsWith("-") && i === 0) targetAgent = arg;
   }
 
   const existingConfig = loadConfig();
   if (!apiKey) apiKey = existingConfig.apiKey;
-  if (!apiUrl) apiUrl = existingConfig.apiUrl;
+  if (!apiUrl) apiUrl = existingConfig.apiUrl || "https://templar-os.vercel.app";
 
   console.log(`1. Testing connection to ${apiUrl}...`);
   try {
-    const data = await apiRequest<any>({ apiUrl, apiKey }, "/api/v1/portfolio");
-    console.log(`   ✓ Connected! Found portfolio for "${data.profile?.fullName}".`);
+    const res = await apiRequest<any>({ apiUrl, apiKey }, "/api/v1/portfolio");
+    const data = res.data || res;
+    console.log(`   ✓ Connected! Found portfolio for "${data.profile?.fullName || "Asenso Owusu Ansah"}".`);
   } catch (err: any) {
     console.warn(`   ! Warning: Could not reach API at ${apiUrl}: ${err.message}`);
-    console.warn(`     Continuing installation; make sure the dev server is started with "pnpm dev".`);
+    console.warn(`     Continuing installation.`);
   }
 
   // Save config
@@ -165,33 +284,65 @@ async function cmdInstall(args: string[]) {
 
   // MCP Server Configuration
   const rootDir = process.cwd();
-  const mcpCommand = "tsx";
-  const mcpArgs = [path.join(rootDir, "src/mcp/server.ts")];
+  const tsxBin = path.join(rootDir, "node_modules", ".bin", "tsx");
+  const serverPath = path.join(rootDir, "src", "mcp", "server.ts");
 
-  const mcpConfig = {
-    mcpServers: {
-      "templar-portfolio": {
-        command: mcpCommand,
-        args: mcpArgs,
-        env: {
-          PORTFOLIO_API_URL: apiUrl,
-          PORTFOLIO_API_KEY: apiKey,
-        },
-      },
+  let mcpCommand = "tsx";
+  let mcpArgs = [serverPath];
+
+  if (fs.existsSync(tsxBin)) {
+    mcpCommand = tsxBin;
+    mcpArgs = [serverPath];
+  } else if (fs.existsSync(serverPath)) {
+    mcpCommand = "npx";
+    mcpArgs = ["-y", "tsx", serverPath];
+  } else {
+    mcpCommand = "npx";
+    mcpArgs = ["-y", "templar-os", "mcp"];
+  }
+
+  const serverConfig = {
+    command: mcpCommand,
+    args: mcpArgs,
+    env: {
+      PORTFOLIO_API_URL: apiUrl,
+      PORTFOLIO_API_KEY: apiKey,
     },
   };
 
-  console.log(`\n2. Model Context Protocol (MCP) Configuration:`);
-  console.log(`Add the following snippet to your agent's MCP settings (e.g., claude_desktop_config.json, .cursor/mcp.json, etc.):\n`);
-  console.log(JSON.stringify(mcpConfig, null, 2));
+  console.log(`\n2. Configuring AI Agent MCP Client(s): [target: ${targetAgent}]`);
+  const targets = getTargetConfigs(targetAgent);
+  let updatedCount = 0;
 
-  // If inside project with skills/ folder, print instructions
-  const skillFile = path.join(rootDir, "skills/portfolio-management/SKILL.md");
-  if (fs.existsSync(skillFile)) {
-    console.log(`\n3. Agent Skill:`);
-    console.log(`   Standard agent skill is available at:`);
-    console.log(`   ${skillFile}`);
-    console.log(`   AI agents can read this file directly to learn all portfolio management workflows.`);
+  for (const t of targets) {
+    // If target is "all", only write to existing client directories or files
+    if (targetAgent === "all" && !fs.existsSync(t.path) && !fs.existsSync(path.dirname(t.path))) {
+      continue;
+    }
+    const success = injectMcpServer(t.path, "templar-portfolio", serverConfig);
+    if (success) {
+      console.log(`   ✓ Configured ${t.name}: ${t.path}`);
+      updatedCount++;
+    }
+  }
+
+  if (updatedCount === 0) {
+    console.log(`   ! No matching client config files found. Manual configuration snippet:\n`);
+    console.log(JSON.stringify({ mcpServers: { "templar-portfolio": serverConfig } }, null, 2));
+  }
+
+  console.log(`\n3. Installing Agent Skill:`);
+  const home = process.env.HOME || process.env.USERPROFILE || "";
+  const installedSkills = installSkillsToAgents(home, rootDir);
+  if (installedSkills.length > 0) {
+    for (const s of installedSkills) {
+      console.log(`   ✓ Installed skill to: ${s}`);
+    }
+  } else {
+    const skillFile = path.join(rootDir, "skills", "portfolio-management", "SKILL.md");
+    if (fs.existsSync(skillFile)) {
+      console.log(`   • Skill file located at: ${skillFile}`);
+    }
   }
 
   console.log(`\n✓ Installation complete! Run "pnpm cli status" to verify at any time.\n`);
