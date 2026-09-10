@@ -25,10 +25,80 @@ import { encryptSecret, decryptSecret } from "./crypto";
  *  admin still has to approve them.
  */
 
-export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-export const ANTHROPIC_MODEL = "claude-3-7-sonnet-latest";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+export const DEFAULT_ANTHROPIC_MODEL = "claude-3-7-sonnet-latest";
+
+// Retained for backwards compatibility with earlier imports
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL;
 
 export type AiProvider = "gemini" | "anthropic";
+
+export interface AiModelInfo {
+  id: string;
+  name: string;
+  description?: string;
+  contextWindow?: number;
+  isRecommended?: boolean;
+}
+
+export const CURATED_GEMINI_MODELS: AiModelInfo[] = [
+  {
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    description: "Latest Flash generation with high-speed multimodal reasoning.",
+    isRecommended: true,
+  },
+  {
+    id: "gemini-3.6-flash",
+    name: "Gemini 3.6 Flash",
+    description: "Highly responsive, low latency production model.",
+  },
+  {
+    id: "gemini-3.7-flash",
+    name: "Gemini 3.7 Flash",
+    description: "Advanced reasoning and technical code analysis.",
+  },
+  {
+    id: "gemini-3.1-pro-preview",
+    name: "Gemini 3.1 Pro Preview",
+    description: "Deep reasoning model for complex architectural patterns.",
+  },
+  {
+    id: "gemini-flash-latest",
+    name: "Gemini Flash (Auto-Updating)",
+    description: "Always points to Google's latest stable Flash model.",
+  },
+  {
+    id: "gemini-pro-latest",
+    name: "Gemini Pro (Auto-Updating)",
+    description: "Always points to Google's latest stable Pro model.",
+  },
+];
+
+export const CURATED_ANTHROPIC_MODELS: AiModelInfo[] = [
+  {
+    id: "claude-3-7-sonnet-latest",
+    name: "Claude 3.7 Sonnet",
+    description: "Hybrid reasoning with adaptive thinking for deep analysis.",
+    isRecommended: true,
+  },
+  {
+    id: "claude-3-5-haiku-latest",
+    name: "Claude 3.5 Haiku",
+    description: "Fastest Claude model for rapid metadata extraction.",
+  },
+  {
+    id: "claude-3-5-sonnet-latest",
+    name: "Claude 3.5 Sonnet",
+    description: "High-accuracy code and architecture comprehension.",
+  },
+  {
+    id: "claude-3-opus-latest",
+    name: "Claude 3 Opus",
+    description: "Top-tier reasoning for large multi-package repositories.",
+  },
+];
 
 /* ─────────────────────────── output schema ─────────────────────────── */
 
@@ -88,8 +158,10 @@ Rules:
   A badge, a placeholder, or example.com is not one — return null.
 - Write shortDescription as one plain sentence. No marketing language.`;
 
-function buildUserMessage(repo: { owner: string; name: string; description?: string | null },
-                          files: { path: string; content: string }[]) {
+function buildUserMessage(
+  repo: { owner: string; name: string; description?: string | null },
+  files: { path: string; content: string }[]
+) {
   const body = files
     .map((f) => `<file path="${f.path.replace(/"/g, "&quot;")}">\n${f.content}\n</file>`)
     .join("\n\n");
@@ -107,7 +179,7 @@ ${body}
 Produce the structured analysis.`;
 }
 
-/* ────────────────────────── provider settings ──────────────────────── */
+/* ────────────────────────── provider keys & settings ──────────────────────── */
 
 export async function resolveGeminiKey(): Promise<string | null> {
   if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
@@ -130,15 +202,26 @@ export async function resolveAnthropicKey(): Promise<string | null> {
 
 export async function getActiveAiProvider(): Promise<AiProvider> {
   try {
-    const s = await db.setting.findUnique({ where: { key: "ai_provider" } });
+    const s = await db.setting.findUnique({ where: { key: "ai_primary_provider" } });
     if (s?.value === "anthropic" || s?.value === "gemini") {
       return s.value;
+    }
+    // Fallback to legacy key
+    const legacy = await db.setting.findUnique({ where: { key: "ai_provider" } });
+    if (legacy?.value === "anthropic" || legacy?.value === "gemini") {
+      return legacy.value;
     }
   } catch {}
   return "gemini";
 }
 
 export async function setActiveAiProvider(provider: AiProvider): Promise<void> {
+  await db.setting.upsert({
+    where: { key: "ai_primary_provider" },
+    update: { value: provider },
+    create: { key: "ai_primary_provider", value: provider },
+  });
+  // Maintain legacy key
   await db.setting.upsert({
     where: { key: "ai_provider" },
     update: { value: provider },
@@ -155,62 +238,488 @@ export async function saveAiApiKey(provider: AiProvider, key: string): Promise<v
   });
 }
 
-export async function getAiConfigStatus() {
-  const activeProvider = await getActiveAiProvider();
+function maskKey(key: string): string {
+  if (key.length <= 8) return "••••••••";
+  return `${key.slice(0, 4)}••••••••${key.slice(-4)}`;
+}
+
+export interface AiFullConfig {
+  primary: {
+    provider: AiProvider;
+    model: string;
+  };
+  secondary: {
+    provider: AiProvider | "none";
+    model: string;
+  };
+  geminiKeyStatus: {
+    configured: boolean;
+    source: "db" | "env" | "none";
+    masked: string | null;
+  };
+  anthropicKeyStatus: {
+    configured: boolean;
+    source: "db" | "env" | "none";
+    masked: string | null;
+  };
+  isReady: boolean;
+}
+
+export async function getAiFullConfig(): Promise<AiFullConfig> {
   const geminiKey = await resolveGeminiKey();
   const anthropicKey = await resolveAnthropicKey();
 
-  const geminiConfigured = Boolean(geminiKey);
-  const anthropicConfigured = Boolean(anthropicKey);
+  const geminiSource: "db" | "env" | "none" = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+    ? "env"
+    : geminiKey
+    ? "db"
+    : "none";
+
+  const anthropicSource: "db" | "env" | "none" = process.env.ANTHROPIC_API_KEY
+    ? "env"
+    : anthropicKey
+    ? "db"
+    : "none";
+
+  let primaryProvider: AiProvider = "gemini";
+  let primaryModel = DEFAULT_GEMINI_MODEL;
+  let secondaryProvider: AiProvider | "none" = "none";
+  let secondaryModel = DEFAULT_ANTHROPIC_MODEL;
+
+  try {
+    const settings = await db.setting.findMany({
+      where: {
+        key: {
+          in: [
+            "ai_primary_provider",
+            "ai_primary_model",
+            "ai_secondary_provider",
+            "ai_secondary_model",
+            "ai_provider",
+          ],
+        },
+      },
+    });
+
+    const map = new Map(settings.map((s) => [s.key, s.value]));
+
+    const pProv = map.get("ai_primary_provider") || map.get("ai_provider");
+    if (pProv === "gemini" || pProv === "anthropic") {
+      primaryProvider = pProv;
+    }
+
+    const pModel = map.get("ai_primary_model");
+    if (pModel && pModel.trim().length > 0) {
+      primaryModel = pModel.trim();
+    } else {
+      primaryModel = primaryProvider === "gemini" ? DEFAULT_GEMINI_MODEL : DEFAULT_ANTHROPIC_MODEL;
+    }
+
+    const sProv = map.get("ai_secondary_provider");
+    if (sProv === "gemini" || sProv === "anthropic" || sProv === "none") {
+      secondaryProvider = sProv;
+    }
+
+    const sModel = map.get("ai_secondary_model");
+    if (sModel && sModel.trim().length > 0) {
+      secondaryModel = sModel.trim();
+    } else {
+      secondaryModel = secondaryProvider === "gemini" ? DEFAULT_GEMINI_MODEL : DEFAULT_ANTHROPIC_MODEL;
+    }
+  } catch {}
+
+  const primaryConfigured = primaryProvider === "gemini" ? Boolean(geminiKey) : Boolean(anthropicKey);
 
   return {
-    activeProvider,
+    primary: {
+      provider: primaryProvider,
+      model: primaryModel,
+    },
+    secondary: {
+      provider: secondaryProvider,
+      model: secondaryModel,
+    },
+    geminiKeyStatus: {
+      configured: Boolean(geminiKey),
+      source: geminiSource,
+      masked: geminiKey ? maskKey(geminiKey) : null,
+    },
+    anthropicKeyStatus: {
+      configured: Boolean(anthropicKey),
+      source: anthropicSource,
+      masked: anthropicKey ? maskKey(anthropicKey) : null,
+    },
+    isReady: primaryConfigured,
+  };
+}
+
+export async function saveAiFullConfig(data: {
+  primaryProvider: AiProvider;
+  primaryModel: string;
+  secondaryProvider: AiProvider | "none";
+  secondaryModel: string;
+  geminiApiKey?: string | null;
+  anthropicApiKey?: string | null;
+}): Promise<void> {
+  const operations = [
+    db.setting.upsert({
+      where: { key: "ai_primary_provider" },
+      update: { value: data.primaryProvider },
+      create: { key: "ai_primary_provider", value: data.primaryProvider },
+    }),
+    db.setting.upsert({
+      where: { key: "ai_provider" },
+      update: { value: data.primaryProvider },
+      create: { key: "ai_provider", value: data.primaryProvider },
+    }),
+    db.setting.upsert({
+      where: { key: "ai_primary_model" },
+      update: { value: data.primaryModel.trim() },
+      create: { key: "ai_primary_model", value: data.primaryModel.trim() },
+    }),
+    db.setting.upsert({
+      where: { key: "ai_secondary_provider" },
+      update: { value: data.secondaryProvider },
+      create: { key: "ai_secondary_provider", value: data.secondaryProvider },
+    }),
+    db.setting.upsert({
+      where: { key: "ai_secondary_model" },
+      update: { value: data.secondaryModel.trim() },
+      create: { key: "ai_secondary_model", value: data.secondaryModel.trim() },
+    }),
+  ];
+
+  if (data.geminiApiKey && data.geminiApiKey.trim().length > 0) {
+    operations.push(
+      db.setting.upsert({
+        where: { key: "gemini_api_key_enc" },
+        update: { value: encryptSecret(data.geminiApiKey.trim()) },
+        create: { key: "gemini_api_key_enc", value: encryptSecret(data.geminiApiKey.trim()) },
+      })
+    );
+  }
+
+  if (data.anthropicApiKey && data.anthropicApiKey.trim().length > 0) {
+    operations.push(
+      db.setting.upsert({
+        where: { key: "anthropic_api_key_enc" },
+        update: { value: encryptSecret(data.anthropicApiKey.trim()) },
+        create: { key: "anthropic_api_key_enc", value: encryptSecret(data.anthropicApiKey.trim()) },
+      })
+    );
+  }
+
+  await Promise.all(operations);
+}
+
+export async function getAiConfigStatus() {
+  const full = await getAiFullConfig();
+  return {
+    activeProvider: full.primary.provider,
     gemini: {
-      configured: geminiConfigured,
-      model: GEMINI_MODEL,
-      keySource: process.env.GEMINI_API_KEY ? ("env" as const) : geminiConfigured ? ("db" as const) : ("none" as const),
+      configured: full.geminiKeyStatus.configured,
+      model: full.primary.provider === "gemini" ? full.primary.model : full.secondary.model,
+      keySource: full.geminiKeyStatus.source,
     },
     anthropic: {
-      configured: anthropicConfigured,
-      model: ANTHROPIC_MODEL,
-      keySource: process.env.ANTHROPIC_API_KEY ? ("env" as const) : anthropicConfigured ? ("db" as const) : ("none" as const),
+      configured: full.anthropicKeyStatus.configured,
+      model: full.primary.provider === "anthropic" ? full.primary.model : full.secondary.model,
+      keySource: full.anthropicKeyStatus.source,
     },
-    isReady: activeProvider === "gemini" ? geminiConfigured : anthropicConfigured,
+    isReady: full.isReady,
   };
 }
 
 export async function analyzerConfigured() {
-  const status = await getAiConfigStatus();
+  const status = await getAiFullConfig();
   return status.isReady;
 }
 
-/* ──────────────────────────── the call ────────────────────────────── */
+/* ────────────────────────── dynamic model discovery ──────────────────────── */
+
+export async function listAvailableModels(
+  provider: AiProvider,
+  apiKeyOverride?: string
+): Promise<{ models: AiModelInfo[]; live: boolean; error?: string }> {
+  if (provider === "gemini") {
+    const key = apiKeyOverride || (await resolveGeminiKey());
+    if (!key) {
+      return { models: CURATED_GEMINI_MODELS, live: false };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000);
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        return {
+          models: CURATED_GEMINI_MODELS,
+          live: false,
+          error: `Google API returned status ${res.status}`,
+        };
+      }
+
+      const data = (await res.json()) as {
+        models?: Array<{
+          name: string;
+          displayName?: string;
+          description?: string;
+          inputTokenLimit?: number;
+          supportedGenerationMethods?: string[];
+        }>;
+      };
+
+      if (!data.models || !Array.isArray(data.models)) {
+        return { models: CURATED_GEMINI_MODELS, live: false };
+      }
+
+      // Filter for generateContent models and exclude specialized non-text models
+      const excludePatterns = [
+        "-tts",
+        "-image",
+        "-transcribe",
+        "lyria",
+        "nano-banana",
+        "robotics",
+        "deep-research",
+        "computer-use",
+      ];
+
+      const discovered: AiModelInfo[] = data.models
+        .filter((m) => {
+          if (!m.supportedGenerationMethods?.includes("generateContent")) return false;
+          const id = m.name.replace(/^models\//, "");
+          return !excludePatterns.some((pattern) => id.includes(pattern));
+        })
+        .map((m) => {
+          const id = m.name.replace(/^models\//, "");
+          return {
+            id,
+            name: m.displayName || id,
+            description: m.description,
+            contextWindow: m.inputTokenLimit,
+            isRecommended: id === "gemini-3.8-flash" || id === "gemini-3.6-flash",
+          };
+        });
+
+      if (discovered.length === 0) {
+        return { models: CURATED_GEMINI_MODELS, live: false };
+      }
+
+      // Sort: Recommended first, then version numbers descending
+      discovered.sort((a, b) => {
+        if (a.isRecommended && !b.isRecommended) return -1;
+        if (!a.isRecommended && b.isRecommended) return 1;
+        return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" });
+      });
+
+      return { models: discovered, live: true };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to fetch live Gemini models";
+      return { models: CURATED_GEMINI_MODELS, live: false, error: msg };
+    }
+  }
+
+  // Anthropic Claude discovery
+  const key = apiKeyOverride || (await resolveAnthropicKey());
+  if (!key) {
+    return { models: CURATED_ANTHROPIC_MODELS, live: false };
+  }
+
+  try {
+    const client = new Anthropic({ apiKey: key });
+    const res = await client.models.list();
+    if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+      const discovered: AiModelInfo[] = res.data.map((m) => ({
+        id: m.id,
+        name: m.display_name || m.id,
+        isRecommended: m.id.includes("3-7-sonnet"),
+      }));
+      return { models: discovered, live: true };
+    }
+  } catch {}
+
+  return { models: CURATED_ANTHROPIC_MODELS, live: false };
+}
+
+/* ────────────────────────── connection testing ──────────────────────── */
+
+export async function testAiModelConnection(
+  provider: AiProvider,
+  model: string,
+  apiKeyOverride?: string
+): Promise<{ ok: boolean; latencyMs?: number; message?: string; error?: string }> {
+  const t0 = Date.now();
+  const normalizedModel = model.trim().replace(/^models\//, "");
+
+  if (provider === "gemini") {
+    const key = apiKeyOverride?.trim() || (await resolveGeminiKey());
+    if (!key) {
+      return { ok: false, error: "No Gemini API key provided or configured." };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${normalizedModel}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Respond in one word: ONLINE" }] }],
+          }),
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeout);
+
+      const latency = Date.now() - t0;
+      const data = (await res.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        error?: { message?: string; code?: number };
+      };
+
+      if (!res.ok || data.error) {
+        return {
+          ok: false,
+          error: data.error?.message || `Google API returned status ${res.status}`,
+        };
+      }
+
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "ONLINE";
+      return {
+        ok: true,
+        latencyMs: latency,
+        message: `Model responded in ${latency}ms ("${responseText}")`,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Connection test timed out or failed.";
+      return { ok: false, error: msg };
+    }
+  }
+
+  // Anthropic test
+  const key = apiKeyOverride?.trim() || (await resolveAnthropicKey());
+  if (!key) {
+    return { ok: false, error: "No Anthropic API key provided or configured." };
+  }
+
+  try {
+    const client = new Anthropic({ apiKey: key });
+    const response = await client.messages.create({
+      model: normalizedModel,
+      max_tokens: 10,
+      messages: [{ role: "user", content: "Respond in one word: ONLINE" }],
+    });
+    const latency = Date.now() - t0;
+    const text = response.content[0]?.type === "text" ? response.content[0].text.trim() : "ONLINE";
+    return {
+      ok: true,
+      latencyMs: latency,
+      message: `Model responded in ${latency}ms ("${text}")`,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Anthropic test failed.";
+    return { ok: false, error: msg };
+  }
+}
+
+/* ──────────────────────────── the call & failover ────────────────────────────── */
 
 export type AnalyzeResult =
-  | { ok: true; analysis: Analysis; provider: AiProvider }
+  | {
+      ok: true;
+      analysis: Analysis;
+      provider: AiProvider;
+      model: string;
+      fallbackUsed?: boolean;
+      fallbackReason?: string;
+    }
   | { ok: false; error: string; retryable: boolean };
 
 export async function analyzeRepository(
   repo: { owner: string; name: string; description?: string | null },
   files: { path: string; content: string }[],
-  providerOverride?: AiProvider
+  options?:
+    | {
+        providerOverride?: AiProvider;
+        modelOverride?: string;
+      }
+    | AiProvider
 ): Promise<AnalyzeResult> {
   if (files.length === 0) {
     return { ok: false, retryable: false, error: "No analysable files were found in that repository." };
   }
 
-  const provider = providerOverride ?? (await getActiveAiProvider());
+  const normalizedOptions =
+    typeof options === "string" ? { providerOverride: options } : options;
 
-  if (provider === "gemini") {
-    return analyzeWithGemini(repo, files);
-  } else {
-    return analyzeWithAnthropic(repo, files);
+  const config = await getAiFullConfig();
+
+  const primaryProvider = normalizedOptions?.providerOverride || config.primary.provider;
+  const primaryModel = normalizedOptions?.modelOverride || config.primary.model;
+
+  // 1. Attempt Primary Analysis
+  const primaryRes =
+    primaryProvider === "gemini"
+      ? await analyzeWithGemini(repo, files, primaryModel)
+      : await analyzeWithAnthropic(repo, files, primaryModel);
+
+  if (primaryRes.ok) {
+    return {
+      ok: true,
+      analysis: primaryRes.analysis,
+      provider: primaryProvider,
+      model: primaryModel,
+      fallbackUsed: false,
+    };
   }
+
+  // 2. Check if Fallback / Secondary is configured
+  const secondaryProvider = config.secondary.provider;
+  const secondaryModel = config.secondary.model;
+
+  if (secondaryProvider !== "none" && secondaryProvider !== primaryProvider) {
+    console.warn(
+      `[AI Analyzer] Primary ${primaryProvider} (${primaryModel}) failed: "${primaryRes.error}". Failing over to secondary ${secondaryProvider} (${secondaryModel})...`
+    );
+
+    const secondaryRes =
+      secondaryProvider === "gemini"
+        ? await analyzeWithGemini(repo, files, secondaryModel)
+        : await analyzeWithAnthropic(repo, files, secondaryModel);
+
+    if (secondaryRes.ok) {
+      return {
+        ok: true,
+        analysis: secondaryRes.analysis,
+        provider: secondaryProvider,
+        model: secondaryModel,
+        fallbackUsed: true,
+        fallbackReason: primaryRes.error,
+      };
+    }
+
+    return {
+      ok: false,
+      retryable: false,
+      error: `Both Primary (${primaryProvider}/${primaryModel}: ${primaryRes.error}) and Fallback (${secondaryProvider}/${secondaryModel}: ${secondaryRes.error}) failed.`,
+    };
+  }
+
+  return primaryRes;
 }
 
 async function analyzeWithGemini(
   repo: { owner: string; name: string; description?: string | null },
-  files: { path: string; content: string }[]
+  files: { path: string; content: string }[],
+  modelName: string
 ): Promise<AnalyzeResult> {
   const apiKey = await resolveGeminiKey();
   if (!apiKey) {
@@ -221,12 +730,14 @@ async function analyzeWithGemini(
     };
   }
 
+  const normalizedModel = modelName.trim().replace(/^models\//, "");
+
   try {
     const ai = new GoogleGenAI({ apiKey });
     const prompt = buildUserMessage(repo, files);
 
     const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
+      model: normalizedModel,
       contents: prompt,
       config: {
         systemInstruction: SYSTEM,
@@ -243,7 +754,7 @@ async function analyzeWithGemini(
     const jsonParsed = JSON.parse(cleanedJson);
     const validated = AnalysisSchema.parse(jsonParsed);
 
-    return { ok: true, analysis: validated, provider: "gemini" };
+    return { ok: true, analysis: validated, provider: "gemini", model: normalizedModel };
   } catch (err: unknown) {
     const e = err as { status?: number; message?: string };
     if (e?.status === 429 || e?.message?.includes("RESOURCE_EXHAUSTED")) {
@@ -251,6 +762,13 @@ async function analyzeWithGemini(
     }
     if (e?.status === 403 || e?.status === 401 || e?.message?.includes("API_KEY_INVALID")) {
       return { ok: false, retryable: false, error: "Gemini API key was rejected." };
+    }
+    if (e?.status === 404 || e?.message?.includes("NOT_FOUND")) {
+      return {
+        ok: false,
+        retryable: false,
+        error: `Model "${normalizedModel}" was not found or is no longer available. Please select an updated model in Settings.`,
+      };
     }
     if (err instanceof z.ZodError) {
       return {
@@ -265,7 +783,8 @@ async function analyzeWithGemini(
 
 async function analyzeWithAnthropic(
   repo: { owner: string; name: string; description?: string | null },
-  files: { path: string; content: string }[]
+  files: { path: string; content: string }[],
+  modelName: string
 ): Promise<AnalyzeResult> {
   const apiKey = await resolveAnthropicKey();
   if (!apiKey) {
@@ -276,11 +795,12 @@ async function analyzeWithAnthropic(
     };
   }
 
+  const normalizedModel = modelName.trim();
   const client = new Anthropic({ apiKey });
 
   try {
     const response = await client.messages.parse({
-      model: ANTHROPIC_MODEL,
+      model: normalizedModel,
       max_tokens: 8000,
       thinking: { type: "adaptive" },
       system: SYSTEM,
@@ -293,7 +813,7 @@ async function analyzeWithAnthropic(
       return { ok: false, retryable: true, error: "The analysis did not match the expected shape. Try again." };
     }
 
-    return { ok: true, analysis: parsed, provider: "anthropic" };
+    return { ok: true, analysis: parsed, provider: "anthropic", model: normalizedModel };
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       return { ok: false, retryable: true, error: "Rate limited by Anthropic API. Try again shortly." };

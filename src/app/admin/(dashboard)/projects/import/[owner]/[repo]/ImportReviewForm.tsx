@@ -11,6 +11,9 @@ interface Props {
   repo: GhRepo;
   analysis: Analysis | null;
   provider: AiProvider;
+  model?: string;
+  fallbackUsed?: boolean;
+  fallbackReason?: string;
   aiSuccess: boolean;
   errorMessage?: string;
   headSha?: string;
@@ -32,6 +35,9 @@ export function ImportReviewForm({
   repo,
   analysis,
   provider,
+  model,
+  fallbackUsed,
+  fallbackReason,
   aiSuccess,
   errorMessage,
   headSha,
@@ -79,8 +85,15 @@ export function ImportReviewForm({
           <div className="flex items-center gap-2">
             <span className={`inline-block h-2 w-2 rounded-full ${aiSuccess ? "bg-[var(--os-ok)]" : "bg-[var(--os-warn)]"}`} />
             <span className="font-mono text-xs font-semibold text-[var(--os-fg)]">
-              {aiSuccess ? `Analyzed with ${provider === "gemini" ? "Google Gemini" : "Anthropic Claude"}` : "Fallback Mode"}
+              {aiSuccess
+                ? `Analyzed with ${provider === "gemini" ? "Google Gemini" : "Anthropic Claude"}${model ? ` (${model})` : ""}`
+                : "Fallback Mode"}
             </span>
+            {fallbackUsed && (
+              <span className="rounded-[var(--os-r-chip)] border border-[var(--os-warn)]/40 bg-[var(--os-warn)]/10 px-2 py-0.5 font-mono text-[0.65rem] text-[var(--os-warn)]">
+                Failover Triggered
+              </span>
+            )}
           </div>
           {analysis?.categoryConfidence && (
             <span className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] px-2 py-0.5 font-mono text-[0.65rem] text-[var(--os-fg-muted)]">
@@ -88,6 +101,12 @@ export function ImportReviewForm({
             </span>
           )}
         </div>
+
+        {fallbackReason && (
+          <p className="mt-1.5 font-mono text-[0.68rem] text-[var(--os-warn)]">
+            Primary engine note: {fallbackReason}
+          </p>
+        )}
 
         {errorMessage && (
           <p className="mt-2 text-xs text-[var(--os-warn)]">{errorMessage}</p>

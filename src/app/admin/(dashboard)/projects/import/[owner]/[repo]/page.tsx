@@ -6,6 +6,7 @@ import {
   analyzeRepository,
   getAiConfigStatus,
   type Analysis,
+  type AiProvider,
 } from "@/server/analyzer";
 import { ImportReviewForm } from "./ImportReviewForm";
 
@@ -45,17 +46,24 @@ export default async function ImportReviewPage({
   let analysis: Analysis | null = null;
   let aiSuccess = false;
   let errorMessage: string | undefined = undefined;
+  let usedProvider: AiProvider = aiStatus.activeProvider;
+  let usedModel: string | undefined = undefined;
+  let fallbackUsed = false;
+  let fallbackReason: string | undefined = undefined;
 
   if (aiStatus.isReady && files.length > 0) {
     const aiRes = await analyzeRepository(
       { owner, name: repoName, description: repo.description },
-      files,
-      aiStatus.activeProvider
+      files
     );
 
     if (aiRes.ok) {
       analysis = aiRes.analysis;
       aiSuccess = true;
+      usedProvider = aiRes.provider;
+      usedModel = aiRes.model;
+      fallbackUsed = Boolean(aiRes.fallbackUsed);
+      fallbackReason = aiRes.fallbackReason;
     } else {
       errorMessage = aiRes.error;
     }
@@ -89,7 +97,10 @@ export default async function ImportReviewPage({
       <ImportReviewForm
         repo={repo}
         analysis={analysis}
-        provider={aiStatus.activeProvider}
+        provider={usedProvider}
+        model={usedModel}
+        fallbackUsed={fallbackUsed}
+        fallbackReason={fallbackReason}
         aiSuccess={aiSuccess}
         errorMessage={errorMessage}
         headSha={headSha}
