@@ -33,19 +33,19 @@ export const PROVIDERS_CATALOG: Record<AiProvider, ProviderDefinition> = {
     id: "gemini",
     name: "Google Gemini",
     tagline: "Multimodal speed & 1M+ token context",
-    defaultModel: "gemini-3.8-flash",
+    defaultModel: "gemini-3.6-flash",
     envKey: "GEMINI_API_KEY",
     curatedModels: [
       {
-        id: "gemini-3.8-flash",
-        name: "Gemini 3.8 Flash",
-        description: "Latest Flash generation with high-speed multimodal reasoning.",
+        id: "gemini-3.6-flash",
+        name: "Gemini 3.6 Flash",
+        description: "Official fast production model with low latency and quick turnaround.",
         isRecommended: true,
       },
       {
-        id: "gemini-3.6-flash",
-        name: "Gemini 3.6 Flash",
-        description: "Highly responsive production model with fast turnaround.",
+        id: "gemini-3.8-flash",
+        name: "Gemini 3.8 Flash",
+        description: "Latest Flash generation with deep reasoning (may take longer to respond).",
       },
       {
         id: "gemini-3.7-flash",
@@ -319,7 +319,7 @@ export const PROVIDERS_CATALOG: Record<AiProvider, ProviderDefinition> = {
   },
 };
 
-export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 export const DEFAULT_ANTHROPIC_MODEL = "claude-3-7-sonnet-latest";
 
 export const PROVIDER_NAMES: Record<string, string> = {

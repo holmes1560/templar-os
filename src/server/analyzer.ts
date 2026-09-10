@@ -577,15 +577,23 @@ export async function testAiModelConnection(
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 12000);
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      const isFlash36 = normalizedModel.includes("3.6-flash");
+      const requestBody: Record<string, unknown> = {
+        contents: [{ parts: [{ text: "Respond in one word: ONLINE" }] }],
+        generationConfig: {
+          maxOutputTokens: 15,
+          ...(isFlash36 ? { thinkingConfig: { thinkingLevel: "MINIMAL" } } : {}),
+        },
+      };
+
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${normalizedModel.replace(/^models\//, "")}:generateContent?key=${key}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: "Respond in one word: ONLINE" }] }],
-          }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal,
         }
       );
@@ -593,7 +601,7 @@ export async function testAiModelConnection(
 
       const latency = Date.now() - t0;
       const data = (await res.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>;
         error?: { message?: string };
       };
 
@@ -601,10 +609,19 @@ export async function testAiModelConnection(
         return { ok: false, error: data.error?.message || `Google API status ${res.status}` };
       }
 
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "ONLINE";
+      const text =
+        data.candidates?.[0]?.content?.parts?.find((p) => !p.thought)?.text?.trim() ||
+        data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+        "ONLINE";
       return { ok: true, latencyMs: latency, message: `Model responded in ${latency}ms ("${text}")` };
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Connection test timed out or failed.";
+      if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
+        return {
+          ok: false,
+          error: "Connection timed out after 30s. The model may be busy, queuing, or generating deep thinking tokens. Try testing again or switch to gemini-3.6-flash.",
+        };
+      }
+      const msg = err instanceof Error ? err.message : "Connection test failed.";
       return { ok: false, error: msg };
     }
   }
@@ -615,7 +632,7 @@ export async function testAiModelConnection(
     if (!key) return { ok: false, error: "No Anthropic API key provided or configured." };
 
     try {
-      const client = new Anthropic({ apiKey: key });
+      const client = new Anthropic({ apiKey: key, timeout: 30000 });
       const response = await client.messages.create({
         model: normalizedModel,
         max_tokens: 10,
@@ -642,6 +659,7 @@ export async function testAiModelConnection(
     const client = new OpenAI({
       apiKey: key || "ollama",
       baseURL: baseUrl,
+      timeout: 30000,
     });
 
     const response = await client.chat.completions.create({
