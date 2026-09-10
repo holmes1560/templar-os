@@ -1,10 +1,21 @@
 {
-  "name": "templar-os",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@holmes1560/templar-os",
+  "version": "1.0.0",
+  "private": false,
+  "description": "TEMPLAR OS interactive portfolio OS, agent CLI, and MCP server",
+  "bin": {
+    "templar-os": "./dist/cli/index.mjs",
+    "portfolio-agent": "./dist/cli/index.mjs"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md"
+  ],
   "scripts": {
     "dev": "next dev -p 3100",
-    "build": "prisma generate && next build",
+    "build": "tsup src/cli/index.ts src/mcp/server.ts --format esm --clean && prisma generate && next build",
+    "build:cli": "tsup src/cli/index.ts src/mcp/server.ts --format esm --clean",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "prisma generate",
@@ -40,6 +51,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.13",
     "typescript": "^5"
   },

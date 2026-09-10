@@ -509,6 +509,16 @@ async function main() {
       case "status":
         await cmdStatus();
         break;
+      case "mcp":
+      case "server": {
+        const mcpDist = path.join(__dirname, "..", "mcp", "server.mjs");
+        if (fs.existsSync(mcpDist)) {
+          await import(mcpDist);
+        } else {
+          await import("../mcp/server");
+        }
+        break;
+      }
       case "install":
       case "setup":
         await cmdInstall(args);
