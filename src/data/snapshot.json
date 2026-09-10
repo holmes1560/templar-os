@@ -1,4 +1,32 @@
 {
+  "profile": {
+    "fullName": "Asenso Owusu Ansah",
+    "shortName": "Asenso",
+    "title": "Computer Science · KNUST",
+    "tagline": "I build across the whole stack — React interfaces, typed backends, ESP32 firmware, and the 3D-printed case it all lives in.",
+    "bio": "Computer science student and builder working across typed web backends, responsive user interfaces, embedded IoT firmware, and network forensics.",
+    "aboutMe": "I build software across an unusually wide range of layers, mostly because I kept refusing to pick one. In a single year I wrote ESP32 firmware for a door lock, an escrow ledger that never stores a balance, and a desktop app that spends most of its energy working around LibreOffice.\n\nThe through-line is that I learn by building the thing, breaking it, and then understanding why it broke. Most of what I know arrived that way rather than from a lecture.",
+    "location": "Kumasi, Ghana",
+    "availabilityStatus": "Open to opportunities",
+    "careerInterests": [
+      "Full-Stack Engineering",
+      "Distributed Systems",
+      "Embedded Systems / IoT",
+      "Cybersecurity & Network Forensics",
+      "Agentic AI Architecture"
+    ],
+    "whatImDrawnTo": [
+      "Systems where the failure mode matters more than the happy path.",
+      "Measuring things properly instead of guessing — and admitting it when the measurement was wrong.",
+      "The seam between software and hardware, where the abstractions stop helping.",
+      "Security as a design constraint rather than a feature bolted on later."
+    ],
+    "howIWorkWithAi": "I use AI tooling heavily — for research, for debugging, for getting a first implementation on screen fast, and for reviewing my own code. A review of one of my backends surfaced 21 real bugs I had missed. The decisions, the architecture and the final implementation are mine; the iteration speed is not something I'm going to pretend I did without help.",
+    "email": "owusuansahasenso1560@gmail.com",
+    "websiteUrl": "https://example.invalid",
+    "githubUrl": "https://github.com/holmes1560",
+    "linkedinUrl": "https://linkedin.com/in/asenso-owusu-ansah"
+  },
   "projects": [
     {
       "slug": "olympus-gate",
@@ -47,11 +75,70 @@
         "Design the failure mode first. 'No power means locked' decided most of the rest of the project.",
         "Anything that depends on a network needs an answer for when the network is gone."
       ],
+      "role": "Hardware & Enclosure Lead, Cloud Backend",
+      "architecture": "ESP32 microcontroller with SPI RFID reader, relay-isolated 12V solenoid loop, and Firebase RTDB offline sync",
+      "failedApproaches": [
+        "Blynk cloud integration was too rigid for the multi-user access-control model",
+        "Common ground with the solenoid coil caused inductive flyback voltage spikes that reset the ESP32"
+      ],
+      "problemSolutions": [
+        "Isolated the 12V lock loop and 5V MCU logic with an optocoupled relay and flyback diode",
+        "Stored the authorized RFID card list in local ESP32 flash so the door lock operates even when network connectivity drops"
+      ],
+      "outcome": "A functional, physically installed RFID access system with custom snap-fit 3D-printed enclosure and companion PWA.",
+      "order": 0,
       "visibility": "public",
       "githubUrl": "https://github.com/holmes1560/RFID_Door_lock",
       "embeddable": false,
       "featured": true,
       "clientWork": false
+    },
+    {
+      "slug": "enclosures",
+      "title": "Parametric Enclosures",
+      "summary": "Two printed cases designed from datasheets rather than guesses.",
+      "description": "Enclosure and firmware work for two embedded builds — an automated cocoa seed dryer and an RFID attendance system. Every dimension came from a manufacturer datasheet. Both enclosures share one architecture: flat box, snap-fit lid, 0.3mm fit clearance, and both parts print with no supports.",
+      "category": "hardware",
+      "period": "Aug 2026",
+      "technologies": [
+        "OpenSCAD",
+        "3D printing",
+        "ESP32",
+        "arduino-cli",
+        "Firebase",
+        "Vite",
+        "TypeScript"
+      ],
+      "skills": [
+        "Parametric CAD",
+        "Design for manufacture",
+        "Tolerancing",
+        "Verification"
+      ],
+      "features": [
+        "Every dimension is a named variable at the top of the .scad source",
+        "Each STL verified as a single closed manifold body",
+        "Base + lid intersection test returns empty — no interference when assembled",
+        "Lid pre-rotated in the STL so it lands top-face-down on the bed"
+      ],
+      "challenges": [
+        "A 16×2 LCD is a completely different size from a 20×4 (80×36 against 98×60), so the attendance case had to be rebuilt from scratch rather than patched."
+      ],
+      "learned": [
+        "Looking up the datasheet takes ten minutes. Reprinting a case that is 2mm wrong takes four hours."
+      ],
+      "role": "Creator & Developer",
+      "architecture": "Modular application architecture",
+      "failedApproaches": [],
+      "problemSolutions": [],
+      "outcome": "Delivered functional project conforming to design goals.",
+      "order": 1,
+      "visibility": "public",
+      "githubUrl": "https://github.com/holmes1560/smart-rfid-attendance-system",
+      "embeddable": false,
+      "featured": false,
+      "clientWork": true,
+      "caveat": "Firmware compiles clean and the self-test passes, but neither build has been through a full hardware cycle."
     },
     {
       "slug": "taas",
@@ -94,6 +181,17 @@
         "You cannot corrupt a balance you never wrote down.",
         "Shared schema packages stop the frontend and backend quietly disagreeing about what a thing is."
       ],
+      "role": "Monorepo Architect & Escrow State Machine Designer",
+      "architecture": "pnpm monorepo with Next.js 15 frontend, NestJS API, PostgreSQL, Redis, MinIO, and a shared Zod schema package",
+      "failedApproaches": [
+        "Direct status column updates allowed concurrent race conditions during simultaneous payment webhook delivery"
+      ],
+      "problemSolutions": [
+        "Implemented strict finite state machine where every status change flows through a single transition handler with row-level locks",
+        "Derived account balances dynamically from append-only ledger entries rather than mutable totals"
+      ],
+      "outcome": "Zero-drift escrow ledger engine with idempotent webhook processing and atomic transaction retries.",
+      "order": 2,
       "visibility": "public",
       "githubUrl": "https://github.com/holmes1560/TaaS",
       "embeddable": false,
@@ -142,92 +240,20 @@
       "learned": [
         "The hardest bugs in a data app are in what you assumed about the data before it arrived."
       ],
+      "role": "Full-Stack Developer & OCR Pipeline Integrator",
+      "architecture": "Next.js UI with FastAPI microservice running pdfplumber and Tesseract OCR over Supabase PostgreSQL",
+      "failedApproaches": [
+        "Computing CWA from the uploaded slip alone ignored previous semesters if the student uploaded only their latest semester slip"
+      ],
+      "problemSolutions": [
+        "Created a temporary LEGACY semester anchor that computes correct cumulative average and automatically cleans itself up once historical slips are uploaded"
+      ],
+      "outcome": "Used by real KNUST students; handled degraded OCR on free-tier hosting gracefully.",
+      "order": 3,
       "visibility": "private",
       "embeddable": false,
       "featured": true,
       "clientWork": false
-    },
-    {
-      "slug": "codm-latency",
-      "title": "Telecel Latency Investigation",
-      "summary": "I published a number, then retracted it. The retraction is the point.",
-      "description": "A two-week measurement of my ISP's route to a game server, done with packet captures and custom Python rather than a speed-test website. It produced a confident, well-documented, wrong answer — and then a corrected one, with the methodological reason for the error written up beside it.",
-      "category": "cybersecurity",
-      "period": "Aug 2026",
-      "technologies": [
-        "Kali Linux",
-        "tcpdump",
-        "Python",
-        "mtr",
-        "Wireshark",
-        "BGP/AS lookup"
-      ],
-      "skills": [
-        "Network forensics",
-        "Measurement methodology",
-        "Hypothesis testing",
-        "Technical writing"
-      ],
-      "features": [
-        "Tablet routed through a laptop hotspot so game traffic could be captured",
-        "Custom passive RTT extraction from a 40MB capture",
-        "Percentile analysis of server inter-arrival gaps",
-        "Diagnosed upstream ICMP filtering — plain ping and mtr die, TCP and UDP probes work"
-      ],
-      "challenges": [
-        "Passive RTT is genuinely hard in a busy flow. I mispaired a reply with the wrong request and sampled a cold start inflated by ~33ms of session setup, producing 86–94ms.",
-        "The corrected figure is 61ms — which the in-game counter had been reporting all along.",
-        "The 'server is in Lagos' conclusion went with it. It was never measured; it only ever matched the wrong number."
-      ],
-      "learned": [
-        "Write down that you were wrong, in the same document, with the reason. It is uncomfortable and it is the only way the notes stay trustworthy.",
-        "A ground truth sitting in plain sight beats a clever derivation."
-      ],
-      "visibility": "local",
-      "embeddable": false,
-      "featured": true,
-      "clientWork": false
-    },
-    {
-      "slug": "enclosures",
-      "title": "Parametric Enclosures",
-      "summary": "Two printed cases designed from datasheets rather than guesses.",
-      "description": "Enclosure and firmware work for two embedded builds — an automated cocoa seed dryer and an RFID attendance system. Every dimension came from a manufacturer datasheet. Both enclosures share one architecture: flat box, snap-fit lid, 0.3mm fit clearance, and both parts print with no supports.",
-      "category": "hardware",
-      "period": "Aug 2026",
-      "technologies": [
-        "OpenSCAD",
-        "3D printing",
-        "ESP32",
-        "arduino-cli",
-        "Firebase",
-        "Vite",
-        "TypeScript"
-      ],
-      "skills": [
-        "Parametric CAD",
-        "Design for manufacture",
-        "Tolerancing",
-        "Verification"
-      ],
-      "features": [
-        "Every dimension is a named variable at the top of the .scad source",
-        "Each STL verified as a single closed manifold body",
-        "Base + lid intersection test returns empty — no interference when assembled",
-        "Lid pre-rotated in the STL so it lands top-face-down on the bed"
-      ],
-      "challenges": [
-        "A 16×2 LCD is a completely different size from a 20×4 (80×36 against 98×60), so the attendance case had to be rebuilt from scratch rather than patched."
-      ],
-      "learned": [
-        "Looking up the datasheet takes ten minutes. Reprinting a case that is 2mm wrong takes four hours."
-      ],
-      "visibility": "public",
-      "githubUrl": "https://github.com/holmes1560/smart-rfid-attendance-system",
-      "embeddable": false,
-      "featured": false,
-      "clientWork": true,
-      "caveat": "Firmware compiles clean and the self-test passes, but neither build has been through a full hardware cycle."
     },
     {
       "slug": "quickpos",
@@ -266,6 +292,16 @@
       "learned": [
         "Once real payments are involved, 'mostly works' stops being a category."
       ],
+      "role": "Sole Full-Stack Developer",
+      "architecture": "Express backend with PostgreSQL, Paystack payment webhooks, and multi-display WebSocket sync",
+      "failedApproaches": [
+        "Naive refund logic altered stock counts without recording an immutable return transaction"
+      ],
+      "problemSolutions": [
+        "Implemented atomic refund transactions that simultaneously restore inventory, balance registers, and generate return receipts"
+      ],
+      "outcome": "Reliable POS software managing live transactions, receipt generation, and customer-facing second screens.",
+      "order": 4,
       "visibility": "public",
       "githubUrl": "https://github.com/holmes1560/quickPOS",
       "embeddable": false,
@@ -311,6 +347,16 @@
         "A schema and the code that uses it drift apart silently. Nothing tells you until it crashes.",
         "Reviewing your own work properly is uncomfortable and worth doing."
       ],
+      "role": "Lead Backend Developer",
+      "architecture": "NestJS 11 with Prisma ORM, MySQL, and Socket.IO real-time chat",
+      "failedApproaches": [
+        "Loose schema drift between early handwritten frontend forms and evolving SQL tables"
+      ],
+      "problemSolutions": [
+        "Comprehensive code audit fixing 21 runtime bugs and introducing strict Prisma schema synchronization"
+      ],
+      "outcome": "Modular agricultural marketplace with secure JWT auth and real-time farmer-buyer messaging.",
+      "order": 5,
       "visibility": "local",
       "embeddable": false,
       "featured": false,
@@ -354,8 +400,70 @@
         "Spring Boot doesn't let you avoid learning dependency injection and connection lifecycles properly.",
         "Everything I've built since sits on what this forced me to understand."
       ],
+      "role": "Full-Stack Mobile Engineer",
+      "architecture": "React Native front end with Spring Boot 3.5 JVM backend and STOMP over WebSocket",
+      "failedApproaches": [
+        "Stateless HTTP polling was sluggish and drained mobile device battery rapidly"
+      ],
+      "problemSolutions": [
+        "Engineered persistent WebSocket connection lifecycles with reconnection backoff and message ordering queues"
+      ],
+      "outcome": "Production-grade chat and calling app with presence tracking and push notification dispatch.",
+      "order": 6,
       "visibility": "public",
       "githubUrl": "https://github.com/holmes1560/Voxsynq_Templar0x",
+      "embeddable": false,
+      "featured": false,
+      "clientWork": false
+    },
+    {
+      "slug": "codm-latency",
+      "title": "Telecel Latency Investigation",
+      "summary": "I published a number, then retracted it. The retraction is the point.",
+      "description": "A two-week measurement of my ISP's route to a game server, done with packet captures and custom Python rather than a speed-test website. It produced a confident, well-documented, wrong answer — and then a corrected one, with the methodological reason for the error written up beside it.",
+      "category": "cybersecurity",
+      "period": "Aug 2026",
+      "technologies": [
+        "Kali Linux",
+        "tcpdump",
+        "Python",
+        "mtr",
+        "Wireshark",
+        "BGP/AS lookup"
+      ],
+      "skills": [
+        "Network forensics",
+        "Measurement methodology",
+        "Hypothesis testing",
+        "Technical writing"
+      ],
+      "features": [
+        "Tablet routed through a laptop hotspot so game traffic could be captured",
+        "Custom passive RTT extraction from a 40MB capture",
+        "Percentile analysis of server inter-arrival gaps",
+        "Diagnosed upstream ICMP filtering — plain ping and mtr die, TCP and UDP probes work"
+      ],
+      "challenges": [
+        "Passive RTT is genuinely hard in a busy flow. I mispaired a reply with the wrong request and sampled a cold start inflated by ~33ms of session setup, producing 86–94ms.",
+        "The corrected figure is 61ms — which the in-game counter had been reporting all along.",
+        "The 'server is in Lagos' conclusion went with it. It was never measured; it only ever matched the wrong number."
+      ],
+      "learned": [
+        "Write down that you were wrong, in the same document, with the reason. It is uncomfortable and it is the only way the notes stay trustworthy.",
+        "A ground truth sitting in plain sight beats a clever derivation."
+      ],
+      "role": "Sole Investigator & Forensics Analyst",
+      "architecture": "Hotspot traffic routing via Kali Linux with tcpdump packet capture and custom Python RTT parsing",
+      "failedApproaches": [
+        "Initially mispaired TCP ACK numbers with cold-start SYN handshakes, reporting false 94ms latency"
+      ],
+      "problemSolutions": [
+        "Reran packet capture with strict session pairing, isolating steady-state UDP/TCP traffic to reveal true 61ms server RTT",
+        "Documented the methodological error and published the correction transparently beside the original data"
+      ],
+      "outcome": "Ground truth validated against game telemetry; diagnosed upstream ISP ICMP throttling.",
+      "order": 7,
+      "visibility": "local",
       "embeddable": false,
       "featured": false,
       "clientWork": false
@@ -395,6 +503,16 @@
       "learned": [
         "A deadline is a design constraint. It decides what you don't build."
       ],
+      "role": "Backend & Agent Protocol Engineer",
+      "architecture": "FastAPI service with Pydantic validation implementing the A2A JSON-RPC 2.0 protocol",
+      "failedApproaches": [
+        "Single-pass LLM generation resulted in hallucinations when synthesizing breaking news"
+      ],
+      "problemSolutions": [
+        "Built two-stage pipeline: conversational query parsing followed by real GNews verification before generation"
+      ],
+      "outcome": "A2A-compliant interoperable AI agent deployed on Railway, passing automated protocol test suites.",
+      "order": 8,
       "visibility": "public",
       "githubUrl": "https://github.com/holmes1560/HNG13_Stage-3",
       "embeddable": false,
@@ -440,6 +558,12 @@
         "When you orchestrate a process you don't control, define success by observable output, not by what it claims.",
         "Two ways to do one thing is how they drift apart."
       ],
+      "role": "Creator & Developer",
+      "architecture": "Modular application architecture",
+      "failedApproaches": [],
+      "problemSolutions": [],
+      "outcome": "Delivered functional project conforming to design goals.",
+      "order": 9,
       "visibility": "local",
       "embeddable": false,
       "featured": false,
@@ -476,10 +600,845 @@
       "learned": [
         "Getting the schema right early makes every query afterwards shorter."
       ],
+      "role": "Creator & Developer",
+      "architecture": "Modular application architecture",
+      "failedApproaches": [],
+      "problemSolutions": [],
+      "outcome": "Delivered functional project conforming to design goals.",
+      "order": 10,
       "visibility": "private",
       "embeddable": false,
       "featured": false,
       "clientWork": true
+    }
+  ],
+  "skills": [
+    {
+      "id": "cmtvxrf50002acpgest42tvua",
+      "name": "Languages",
+      "slug": "languages",
+      "order": 0,
+      "skills": [
+        {
+          "id": "cmtvxrf56002ccpge7jqhucc6",
+          "name": "TypeScript",
+          "technologies": [
+            "TypeScript"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 5
+        },
+        {
+          "id": "cmtvxrf5b002ecpgeyaji3543",
+          "name": "JavaScript",
+          "technologies": [
+            "JavaScript"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf5d002gcpge72ot3yl0",
+          "name": "Python",
+          "technologies": [
+            "Python"
+          ],
+          "order": 2,
+          "featured": true,
+          "projectCount": 3
+        },
+        {
+          "id": "cmtvxrf5g002icpgeiy7m8rzd",
+          "name": "Java",
+          "technologies": [
+            "Java"
+          ],
+          "order": 3,
+          "featured": false
+        },
+        {
+          "id": "cmtvxrf5j002kcpgeycpl77fn",
+          "name": "C / C++",
+          "technologies": [
+            "C / C++"
+          ],
+          "order": 4,
+          "featured": false
+        },
+        {
+          "id": "cmtvxrf5m002mcpgeq89zn71w",
+          "name": "SQL",
+          "technologies": [
+            "SQL"
+          ],
+          "order": 5,
+          "featured": false
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf5p002ncpge8awu58zk",
+      "name": "Frontend",
+      "slug": "frontend",
+      "order": 1,
+      "skills": [
+        {
+          "id": "cmtvxrf5t002pcpgelqkt3g7d",
+          "name": "Next.js",
+          "technologies": [
+            "Next.js"
+          ],
+          "order": 0,
+          "featured": true
+        },
+        {
+          "id": "cmtvxrf5v002rcpge63df8p1m",
+          "name": "React",
+          "technologies": [
+            "React"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 2
+        },
+        {
+          "id": "cmtvxrf5y002tcpgeb46ono8o",
+          "name": "Tailwind CSS",
+          "technologies": [
+            "Tailwind CSS"
+          ],
+          "order": 2,
+          "featured": true
+        },
+        {
+          "id": "cmtvxrf61002vcpge3rj9n0nt",
+          "name": "Vite",
+          "technologies": [
+            "Vite"
+          ],
+          "order": 3,
+          "featured": false,
+          "projectCount": 2
+        },
+        {
+          "id": "cmtvxrf63002xcpge7uimgf6j",
+          "name": "Recharts",
+          "technologies": [
+            "Recharts"
+          ],
+          "order": 4,
+          "featured": false,
+          "projectCount": 1
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf64002ycpgenc7y70k0",
+      "name": "Backend",
+      "slug": "backend",
+      "order": 2,
+      "skills": [
+        {
+          "id": "cmtvxrf660030cpgeeokqmond",
+          "name": "NestJS",
+          "technologies": [
+            "NestJS"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf690032cpge7svkz20h",
+          "name": "FastAPI",
+          "technologies": [
+            "FastAPI"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 2
+        },
+        {
+          "id": "cmtvxrf6b0034cpge07a3y78j",
+          "name": "Express",
+          "technologies": [
+            "Express"
+          ],
+          "order": 2,
+          "featured": true,
+          "projectCount": 2
+        },
+        {
+          "id": "cmtvxrf6e0036cpgekbs2z184",
+          "name": "Spring Boot",
+          "technologies": [
+            "Spring Boot"
+          ],
+          "order": 3,
+          "featured": false
+        },
+        {
+          "id": "cmtvxrf6h0038cpge2lfuf0ps",
+          "name": "Prisma",
+          "technologies": [
+            "Prisma"
+          ],
+          "order": 4,
+          "featured": false
+        },
+        {
+          "id": "cmtvxrf6j003acpgepdcnzghg",
+          "name": "SQLAlchemy",
+          "technologies": [
+            "SQLAlchemy"
+          ],
+          "order": 5,
+          "featured": false,
+          "projectCount": 1
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf6l003bcpgegzpj3e68",
+      "name": "Mobile",
+      "slug": "mobile",
+      "order": 3,
+      "skills": [
+        {
+          "id": "cmtvxrf6n003dcpgeiamuk8ol",
+          "name": "React Native",
+          "technologies": [
+            "React Native"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf6q003fcpgemm823kac",
+          "name": "Expo",
+          "technologies": [
+            "Expo"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 1
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf6r003gcpge9spayn5l",
+      "name": "Databases",
+      "slug": "databases",
+      "order": 4,
+      "skills": [
+        {
+          "id": "cmtvxrf6u003icpgezg6o01jf",
+          "name": "PostgreSQL",
+          "technologies": [
+            "PostgreSQL"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 5
+        },
+        {
+          "id": "cmtvxrf6x003kcpgeocb6dskk",
+          "name": "MySQL",
+          "technologies": [
+            "MySQL"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf6z003mcpgee0wv3tiu",
+          "name": "Supabase",
+          "technologies": [
+            "Supabase"
+          ],
+          "order": 2,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf72003ocpge5rbjbwyt",
+          "name": "Redis",
+          "technologies": [
+            "Redis"
+          ],
+          "order": 3,
+          "featured": false,
+          "projectCount": 1
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf73003pcpge3b8uqtfv",
+      "name": "DevOps & Cloud",
+      "slug": "devops-cloud",
+      "order": 5,
+      "skills": [
+        {
+          "id": "cmtvxrf75003rcpgel1kjkrtg",
+          "name": "Docker",
+          "technologies": [
+            "Docker"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf77003tcpge3gvwm4ri",
+          "name": "Vercel",
+          "technologies": [
+            "Vercel"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf7a003vcpge4e3s84sr",
+          "name": "Render",
+          "technologies": [
+            "Render"
+          ],
+          "order": 2,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf7c003xcpgeoghdao25",
+          "name": "Railway",
+          "technologies": [
+            "Railway"
+          ],
+          "order": 3,
+          "featured": false,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf7f003zcpgeeq7g3u99",
+          "name": "Firebase",
+          "technologies": [
+            "Firebase"
+          ],
+          "order": 4,
+          "featured": false,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf7h0041cpge95hqc9fh",
+          "name": "MinIO",
+          "technologies": [
+            "MinIO"
+          ],
+          "order": 5,
+          "featured": false,
+          "projectCount": 1
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf7i0042cpgexkxkfv61",
+      "name": "Embedded & Hardware",
+      "slug": "embedded-hardware",
+      "order": 6,
+      "skills": [
+        {
+          "id": "cmtvxrf7l0044cpge5ogmixye",
+          "name": "ESP32",
+          "technologies": [
+            "ESP32"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 2
+        },
+        {
+          "id": "cmtvxrf7n0046cpgedia36eds",
+          "name": "Arduino",
+          "technologies": [
+            "Arduino"
+          ],
+          "order": 1,
+          "featured": true
+        },
+        {
+          "id": "cmtvxrf7p0048cpgecjdgslwd",
+          "name": "MFRC522 RFID",
+          "technologies": [
+            "MFRC522 RFID"
+          ],
+          "order": 2,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf7s004acpgeaefemfl4",
+          "name": "I²C / SPI",
+          "technologies": [
+            "I²C / SPI"
+          ],
+          "order": 3,
+          "featured": false
+        },
+        {
+          "id": "cmtvxrf7v004ccpgeoc9h0arb",
+          "name": "OpenSCAD",
+          "technologies": [
+            "OpenSCAD"
+          ],
+          "order": 4,
+          "featured": false,
+          "projectCount": 2
+        },
+        {
+          "id": "cmtvxrf7x004ecpgei59hfldf",
+          "name": "3D printing",
+          "technologies": [
+            "3D printing"
+          ],
+          "order": 5,
+          "featured": false,
+          "projectCount": 2
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf7z004fcpge5d3071sj",
+      "name": "Security & Networking",
+      "slug": "security-networking",
+      "order": 7,
+      "skills": [
+        {
+          "id": "cmtvxrf81004hcpgej2h07buw",
+          "name": "tcpdump",
+          "technologies": [
+            "tcpdump"
+          ],
+          "order": 0,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf83004jcpgeugzi97de",
+          "name": "Wireshark",
+          "technologies": [
+            "Wireshark"
+          ],
+          "order": 1,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf85004lcpgekyq6xhmu",
+          "name": "mtr",
+          "technologies": [
+            "mtr"
+          ],
+          "order": 2,
+          "featured": true,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf88004ncpge28kkqt2o",
+          "name": "Kali Linux",
+          "technologies": [
+            "Kali Linux"
+          ],
+          "order": 3,
+          "featured": false,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf8b004pcpgedx720vp7",
+          "name": "WebAuthn",
+          "technologies": [
+            "WebAuthn"
+          ],
+          "order": 4,
+          "featured": false,
+          "projectCount": 1
+        },
+        {
+          "id": "cmtvxrf8d004rcpge2lpo3mn6",
+          "name": "Row Level Security",
+          "technologies": [
+            "Row Level Security"
+          ],
+          "order": 5,
+          "featured": false
+        }
+      ]
+    },
+    {
+      "id": "cmtvxrf8f004scpgee6vpvglo",
+      "name": "AI & Agents",
+      "slug": "ai-agents",
+      "order": 8,
+      "skills": [
+        {
+          "id": "cmtvxrf8h004ucpgeni5xz1uu",
+          "name": "Gemini API",
+          "technologies": [
+            "Gemini API"
+          ],
+          "order": 0,
+          "featured": true
+        },
+        {
+          "id": "cmtvxrf8j004wcpgegdk2ped5",
+          "name": "Anthropic SDK",
+          "technologies": [
+            "Anthropic SDK"
+          ],
+          "order": 1,
+          "featured": true
+        },
+        {
+          "id": "cmtvxrf8m004ycpgeanpvjzla",
+          "name": "A2A / JSON-RPC 2.0",
+          "technologies": [
+            "A2A / JSON-RPC 2.0"
+          ],
+          "order": 2,
+          "featured": true
+        },
+        {
+          "id": "cmtvxrf8o0050cpge6hkyo8h0",
+          "name": "Model Context Protocol (MCP)",
+          "technologies": [
+            "Model Context Protocol (MCP)"
+          ],
+          "order": 3,
+          "featured": false
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "id": "cmtvxrfgc005ccpges50jubjk",
+      "title": "Started BSc Computer Science",
+      "type": "university",
+      "organization": "Kwame Nkrumah University of Science & Technology",
+      "startDate": "2023",
+      "endDate": "Present",
+      "isCurrent": true,
+      "shortDescription": "BSc Computer Science program covering low-level architecture, algorithms, and system design.",
+      "detailedDescription": "Foundational and advanced coursework in embedded systems, computer graphics, operating systems, AI, and network administration.",
+      "technologies": [
+        "C++",
+        "Java",
+        "Python",
+        "Data Structures",
+        "Linux"
+      ],
+      "skills": [
+        "Algorithm Analysis",
+        "Systems Programming",
+        "Computer Architecture"
+      ],
+      "relatedProjectIds": [],
+      "icon": "academic",
+      "order": 10
+    },
+    {
+      "id": "cmtvxrfgf005dcpgeketh768p",
+      "title": "Built VoxSynq Communication Suite",
+      "type": "project",
+      "organization": "Personal Project",
+      "startDate": "Jun 2025",
+      "endDate": "Sep 2025",
+      "isCurrent": false,
+      "shortDescription": "Full-stack mobile messaging and VoIP platform with Spring Boot and React Native.",
+      "detailedDescription": "Implemented real-time bidirectional messaging, WebSocket STOMP protocol, and Docker containerization.",
+      "technologies": [
+        "React Native",
+        "Spring Boot",
+        "PostgreSQL",
+        "WebSocket",
+        "STOMP",
+        "Docker"
+      ],
+      "skills": [
+        "Mobile Development",
+        "JVM Architecture",
+        "Real-Time Protocols"
+      ],
+      "relatedProjectIds": [],
+      "icon": "mobile",
+      "order": 20
+    },
+    {
+      "id": "cmtvxrfgh005ecpge6u8rsj2r",
+      "title": "HNG13 AI Backend Track",
+      "type": "internship",
+      "organization": "HNG Tech",
+      "startDate": "Oct 2025",
+      "endDate": "Nov 2025",
+      "isCurrent": false,
+      "shortDescription": "Built an A2A-compliant interoperable agent service speaking JSON-RPC 2.0 under strict stage deadlines.",
+      "detailedDescription": "Engineered two-stage news verification and conversational topic extraction using Gemini API and FastAPI.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "Gemini API",
+        "JSON-RPC 2.0",
+        "Railway"
+      ],
+      "skills": [
+        "Agent Protocol Compliance",
+        "API Design",
+        "Strict Deadlines"
+      ],
+      "relatedProjectIds": [],
+      "icon": "briefcase",
+      "order": 30
+    },
+    {
+      "id": "cmtvxrfgi005fcpgepflrvup0",
+      "title": "Architectural Evolution: AgriConnect",
+      "type": "project",
+      "organization": "Coursework / Project",
+      "startDate": "Nov 2025",
+      "endDate": "Jan 2026",
+      "isCurrent": false,
+      "shortDescription": "Complete transition from handwritten HTML to React frontend and typed NestJS + Prisma backend.",
+      "detailedDescription": "Conducted rigorous self-audit that surfaced 21 runtime bugs and schema drifts, establishing strong testing principles.",
+      "technologies": [
+        "NestJS",
+        "Prisma",
+        "MySQL",
+        "React",
+        "Socket.IO",
+        "TypeScript"
+      ],
+      "skills": [
+        "Architecture Progression",
+        "ORM Modeling",
+        "Self-Review Discipline"
+      ],
+      "relatedProjectIds": [],
+      "icon": "code",
+      "order": 40
+    },
+    {
+      "id": "cmtvxrfgk005gcpge3uugqcu6",
+      "title": "CWA Academic Calculator & Planner",
+      "type": "project",
+      "organization": "Group 2, KNUST",
+      "startDate": "Feb 2026",
+      "endDate": "Jun 2026",
+      "isCurrent": false,
+      "shortDescription": "OCR slip parser and academic weighted-average planner deployed for active KNUST students.",
+      "detailedDescription": "Designed the legacy semester anchor pattern to prevent historical data loss and handled OCR degradation gracefully.",
+      "technologies": [
+        "Next.js",
+        "FastAPI",
+        "PostgreSQL",
+        "Tesseract OCR",
+        "Supabase RLS"
+      ],
+      "skills": [
+        "OCR Data Pipelines",
+        "Row Level Security",
+        "Fault-Tolerant UX"
+      ],
+      "relatedProjectIds": [],
+      "icon": "calculator",
+      "order": 50
+    },
+    {
+      "id": "cmtvxrfgm005hcpgex5x4hqly",
+      "title": "Commercial Retail POS: QuickPOS",
+      "type": "project",
+      "organization": "Commercial Client",
+      "startDate": "Apr 2026",
+      "endDate": "May 2026",
+      "isCurrent": false,
+      "shortDescription": "Full-scale POS system handling live Paystack payments, stock reconciliation, and second-screen mirroring.",
+      "detailedDescription": "Addressed complex multi-entity refund transactions where financial ledgers, inventory tables, and receipts must remain atomic.",
+      "technologies": [
+        "Node.js",
+        "Express",
+        "PostgreSQL",
+        "Paystack",
+        "jsPDF",
+        "Gemini"
+      ],
+      "skills": [
+        "Financial Integrity",
+        "Transactional Systems",
+        "Hardware Mirroring"
+      ],
+      "relatedProjectIds": [],
+      "icon": "shop",
+      "order": 60
+    },
+    {
+      "id": "cmtvxrfgo005icpge6iofi88f",
+      "title": "Olympus Gate: Embedded Access Control",
+      "type": "project",
+      "organization": "Group 16, KNUST",
+      "startDate": "May 2026",
+      "endDate": "Aug 2026",
+      "isCurrent": false,
+      "shortDescription": "ESP32 RFID door lock with fail-secure solenoid, offline flash list, and custom 3D-printed snap-fit case.",
+      "detailedDescription": "Integrated hardware and software from ground up: OpenSCAD parametric enclosure, flyback diode isolation, and PWA companion app.",
+      "technologies": [
+        "ESP32",
+        "C++",
+        "MFRC522 RFID",
+        "Firebase RTDB",
+        "OpenSCAD",
+        "3D Printing"
+      ],
+      "skills": [
+        "Embedded Hardware",
+        "Parametric CAD",
+        "Circuit Isolation",
+        "Offline-First Design"
+      ],
+      "relatedProjectIds": [],
+      "icon": "lock",
+      "order": 70
+    },
+    {
+      "id": "cmtvxrfgq005jcpgetgsryyzt",
+      "title": "TaaS: Trust as a Service Escrow Engine",
+      "type": "project",
+      "organization": "Group 2, KNUST",
+      "startDate": "Jul 2026",
+      "endDate": "Aug 2026",
+      "isCurrent": false,
+      "shortDescription": "P2P marketplace powered by a standalone escrow state machine and append-only ledger.",
+      "detailedDescription": "Designed pnpm monorepo with strict shared schema package, row locking, and idempotent transaction retries.",
+      "technologies": [
+        "Next.js 15",
+        "NestJS",
+        "PostgreSQL",
+        "Redis",
+        "Docker",
+        "Zod",
+        "TRON"
+      ],
+      "skills": [
+        "Fintech State Machines",
+        "Monorepo Engineering",
+        "Append-Only Ledgers"
+      ],
+      "relatedProjectIds": [],
+      "icon": "shield",
+      "order": 80
+    },
+    {
+      "id": "cmtvxrfgr005kcpgeo6emku8j",
+      "title": "Telecel Network Latency Forensics",
+      "type": "milestone",
+      "organization": "Network Research",
+      "startDate": "Aug 2026",
+      "endDate": "Aug 2026",
+      "isCurrent": false,
+      "shortDescription": "Two-week passive packet capture analysis of ISP routing with published methodology correction.",
+      "detailedDescription": "Diagnosed ICMP filtering, caught initial session pairing miscalculation, and transparently published retraction and ground truth.",
+      "technologies": [
+        "Kali Linux",
+        "tcpdump",
+        "Python",
+        "mtr",
+        "Wireshark",
+        "BGP/AS"
+      ],
+      "skills": [
+        "Network Forensics",
+        "Empirical Measurement",
+        "Engineering Integrity"
+      ],
+      "relatedProjectIds": [],
+      "icon": "pulse",
+      "order": 90
+    },
+    {
+      "id": "cmtvxrfgt005lcpgevwl899n4",
+      "title": "TEMPLAR OS Portfolio & Agent Platform",
+      "type": "milestone",
+      "organization": "Personal Platform",
+      "startDate": "Sep 2026",
+      "endDate": "Present",
+      "isCurrent": true,
+      "shortDescription": "Interactive retro-modern OS portfolio, MCP agent server, and API-driven CMS.",
+      "detailedDescription": "Transformed static portfolio into an agent-agnostic platform exposing fine-grained REST APIs, MCP tools, and SKILL.md.",
+      "technologies": [
+        "Next.js 16",
+        "TypeScript",
+        "Prisma",
+        "PostgreSQL",
+        "Tailwind CSS",
+        "MCP Protocol"
+      ],
+      "skills": [
+        "Platform Architecture",
+        "MCP Server Engineering",
+        "Agentic Systems"
+      ],
+      "relatedProjectIds": [],
+      "icon": "terminal",
+      "order": 100
+    }
+  ],
+  "experience": [],
+  "education": [
+    {
+      "id": "cmtvxrfgx005mcpgedtwx6mol",
+      "institution": "Kwame Nkrumah University of Science and Technology (KNUST)",
+      "degree": "BSc Computer Science",
+      "fieldOfStudy": "Computer Science",
+      "startDate": "2023",
+      "endDate": "2026",
+      "isCurrent": true,
+      "description": "Undergraduate curriculum spanning embedded systems, computer architecture, data structures, algorithm design, operating systems, AI, and computer networking.",
+      "achievements": [
+        "Lead architect for TaaS monorepo escrow system",
+        "Hardware and enclosure engineer for Olympus Gate RFID lock",
+        "Developer of the crowdsourced CWA Calculator used across KNUST"
+      ],
+      "order": 0
+    }
+  ],
+  "certifications": [],
+  "achievements": [],
+  "socialLinks": [
+    {
+      "id": "cmtvxrfh1005ncpgefa7nw9fe",
+      "platform": "GitHub",
+      "label": "GitHub",
+      "url": "https://github.com/holmes1560",
+      "username": "holmes1560",
+      "icon": "github",
+      "order": 0
+    },
+    {
+      "id": "cmtvxrfh4005ocpges0lxpglj",
+      "platform": "LinkedIn",
+      "label": "LinkedIn",
+      "url": "https://linkedin.com/in/asenso-owusu-ansah",
+      "icon": "globe",
+      "order": 1
+    },
+    {
+      "id": "cmtvxrfh6005pcpgeq6naecbc",
+      "platform": "Email",
+      "label": "Email",
+      "url": "mailto:owusuansahasenso1560@gmail.com",
+      "icon": "mail",
+      "order": 2
     }
   ],
   "apps": [
@@ -544,6 +1503,19 @@
       "cell": 4,
       "width": 760,
       "height": 520,
+      "resizable": true,
+      "maximizable": true,
+      "minimizable": true
+    },
+    {
+      "appKey": "timeline",
+      "name": "Career Timeline",
+      "icon": "pulse",
+      "launchMode": "internal",
+      "workspace": 0,
+      "cell": 5,
+      "width": 900,
+      "height": 580,
       "resizable": true,
       "maximizable": true,
       "minimizable": true
@@ -642,6 +1614,14 @@
     }
   ],
   "settings": {
+    "gemini_api_key_enc": "v1.mf9ch10hAAZnBkUn.KTcHVbO5rA7xmd2PQLkQog.FM9dBDlbAbb1oZJPOwS7xnMSmSj5iVo8-FSzh-XUnJmq2U2BBmBApHlwHhNhN4LyjaJUbD0",
+    "ai_secondary_model": "claude-3-7-sonnet-latest",
+    "ai_secondary_provider": "none",
+    "custom_base_url": "https://api.together.xyz/v1",
+    "custom_provider_name": "Custom AI Gateway",
+    "ai_primary_provider": "gemini",
+    "ai_provider": "gemini",
+    "ai_primary_model": "gemini-3.6-flash",
     "site.name": "Asenso Owusu Ansah",
     "site.shortName": "Asenso",
     "site.system": "TEMPLAR OS",
@@ -651,17 +1631,9 @@
     "site.location": "Kumasi, Ghana",
     "site.github": "https://github.com/holmes1560",
     "site.githubUser": "holmes1560",
-    "site.email": "",
-    "site.linkedin": "",
-    "site.resumePath": "",
-    "gemini_api_key_enc": "v1.mf9ch10hAAZnBkUn.KTcHVbO5rA7xmd2PQLkQog.FM9dBDlbAbb1oZJPOwS7xnMSmSj5iVo8-FSzh-XUnJmq2U2BBmBApHlwHhNhN4LyjaJUbD0",
-    "ai_secondary_model": "claude-3-7-sonnet-latest",
-    "ai_secondary_provider": "none",
-    "custom_base_url": "https://api.together.xyz/v1",
-    "custom_provider_name": "Custom AI Gateway",
-    "ai_primary_provider": "gemini",
-    "ai_provider": "gemini",
-    "ai_primary_model": "gemini-3.6-flash"
+    "site.email": "owusuansahasenso1560@gmail.com",
+    "site.linkedin": "https://linkedin.com/in/asenso-owusu-ansah",
+    "site.resumePath": ""
   },
-  "generatedAt": "2026-09-10T18:08:46.437Z"
+  "generatedAt": "2026-09-10T22:00:50.866Z"
 }

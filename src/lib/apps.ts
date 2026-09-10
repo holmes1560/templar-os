@@ -22,6 +22,7 @@ export const APPS: AppDef[] = [
 
   // ── Projects ─────────────────────────────────────────
   { id: "projects", title: "Projects", icon: "folder", workspace: 1, size: { w: 940, h: 620 } },
+  { id: "timeline", title: "Timeline", icon: "timeline", workspace: 1, size: { w: 900, h: 580 } },
   { id: "files", title: "Files", icon: "files", workspace: 1, size: { w: 820, h: 560 } },
   { id: "github", title: "GitHub", icon: "github", workspace: 1, size: { w: 0, h: 0 }, externalUrl: "https://github.com/holmes1560" },
 

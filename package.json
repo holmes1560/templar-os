@@ -13,11 +13,15 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:snapshot": "tsx scripts/snapshot.ts",
-    "admin:create": "tsx scripts/create-admin.ts"
+    "admin:create": "tsx scripts/create-admin.ts",
+    "mcp:server": "tsx src/mcp/server.ts",
+    "cli": "tsx src/cli/index.ts",
+    "test:e2e": "tsx scripts/test-e2e.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
     "@google/genai": "^2.21.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@prisma/client": "^6.19.3",
     "motion": "^13.2.0",
     "next": "16.3.4",

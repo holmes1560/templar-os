@@ -60,3 +60,39 @@ export function useSetting(key: string, fallback = ""): string {
 export function useIsStale(): boolean {
   return usePortfolio().stale === true;
 }
+
+export function useProfile() {
+  return usePortfolio().profile;
+}
+
+export function useSkills() {
+  return usePortfolio().skills;
+}
+
+export function useTimeline() {
+  return usePortfolio().timeline;
+}
+
+export function useExperience() {
+  return usePortfolio().experience;
+}
+
+export function useEducation() {
+  return usePortfolio().education;
+}
+
+export function useCertifications() {
+  return usePortfolio().certifications;
+}
+
+export function useAchievements() {
+  return usePortfolio().achievements;
+}
+
+export function useSocialLinks() {
+  return usePortfolio().socialLinks;
+}
+
+export function useResume() {
+  return usePortfolio().resume;
+}

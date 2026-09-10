@@ -32,6 +32,7 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
 
   auditLogs AuditLog[]
+  revisions Revision[]
 
   @@map("admin_users")
 }
@@ -109,6 +110,17 @@ model Project {
   challenges String[]
   learned    String[]
   skills     String[]
+
+  /// engineering experience & lessons learned (§13)
+  role             String?
+  architecture     String?
+  failedApproaches String[]
+  problemSolutions String[]
+  outcome          String?
+  order            Int            @default(0)
+  visible          Boolean        @default(true)
+  isAiGenerated    Boolean        @default(false)
+  aiOrigin         String?
 
   technologies ProjectTechnology[]
   applications Application[]
@@ -333,3 +345,308 @@ model GitHubConnection {
 
   @@map("github_connections")
 }
+
+// ────────────────────────────── profile ─────────────────────────────
+
+model Profile {
+  id                 String   @id @default(cuid())
+  fullName           String
+  shortName          String
+  title              String
+  tagline            String
+  bio                String
+  aboutMe            String
+  location           String
+  availabilityStatus String   @default("Open to opportunities")
+  careerInterests    String[]
+  whatImDrawnTo      String[]
+  howIWorkWithAi     String?
+  avatarUrl          String?
+  email              String?
+  phone              String?
+  websiteUrl         String?
+  githubUrl          String?
+  linkedinUrl        String?
+  twitterUrl         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// ────────────────────────────── skills ──────────────────────────────
+
+model SkillCategory {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  slug   String  @unique
+  order  Int     @default(0)
+  skills Skill[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("skill_categories")
+}
+
+model Skill {
+  id           String        @id @default(cuid())
+  categoryId   String
+  category     SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  proficiency  Int?          // 1-100 percentage
+  technologies String[]
+  order        Int           @default(0)
+  featured     Boolean       @default(false)
+  visible      Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([categoryId, order])
+  @@map("skills")
+}
+
+// ───────────────────────────── timeline ─────────────────────────────
+
+enum TimelineType {
+  UNIVERSITY
+  INTERNSHIP
+  EMPLOYMENT
+  PROJECT
+  CERTIFICATION
+  MILESTONE
+  LEARNING
+}
+
+model TimelineEntry {
+  id                  String       @id @default(cuid())
+  title               String
+  type                TimelineType @default(MILESTONE)
+  organization        String?
+  startDate           String
+  endDate             String?
+  isCurrent           Boolean      @default(false)
+  shortDescription    String
+  detailedDescription String?
+  technologies        String[]
+  skills              String[]
+  relatedProjectIds   String[]
+  icon                String       @default("milestone")
+  color               String?
+  order               Int          @default(0)
+  visible             Boolean      @default(true)
+  isAiGenerated       Boolean      @default(false)
+  aiOrigin            String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([type, order])
+  @@map("timeline_entries")
+}
+
+// ──────────────────────────── experience ────────────────────────────
+
+model Experience {
+  id               String   @id @default(cuid())
+  organization     String
+  role             String
+  employmentType   String?  // Full-time, Internship, Contract, Freelance
+  location         String?
+  startDate        String
+  endDate          String?
+  isCurrent        Boolean  @default(false)
+  description      String
+  responsibilities String[]
+  achievements     String[]
+  technologies     String[]
+  order            Int      @default(0)
+  visible          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("experiences")
+}
+
+// ───────────────────────────── education ────────────────────────────
+
+model Education {
+  id           String   @id @default(cuid())
+  institution  String
+  degree       String
+  fieldOfStudy String?
+  startDate    String
+  endDate      String?
+  isCurrent    Boolean  @default(false)
+  description  String?
+  achievements String[]
+  order        Int      @default(0)
+  visible      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("educations")
+}
+
+// ─────────────────────────── certifications ─────────────────────────
+
+model Certification {
+  id            String   @id @default(cuid())
+  name          String
+  issuer        String
+  issueDate     String?
+  expiryDate    String?
+  credentialUrl String?
+  credentialId  String?
+  description   String?
+  order         Int      @default(0)
+  visible       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("certifications")
+}
+
+// ─────────────────────────── achievements ───────────────────────────
+
+model Achievement {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  date         String?
+  organization String?
+  linkUrl      String?
+  order        Int      @default(0)
+  visible      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("achievements")
+}
+
+// ───────────────────────────── resumes ──────────────────────────────
+
+model ResumeRecord {
+  id         String   @id @default(cuid())
+  version    String
+  fileName   String
+  filePath   String
+  fileSize   Int?
+  mimeType   String?  @default("application/pdf")
+  isActive   Boolean  @default(true)
+  uploadedAt DateTime @default(now())
+
+  @@map("resume_records")
+}
+
+// ─────────────────────────── social links ───────────────────────────
+
+model SocialLink {
+  id       String  @id @default(cuid())
+  platform String  // GitHub, LinkedIn, X, Email, etc.
+  label    String
+  url      String
+  username String?
+  icon     String  @default("globe")
+  order    Int     @default(0)
+  visible  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("social_links")
+}
+
+// ───────────────────────────── api keys ─────────────────────────────
+
+enum ApiKeyRole {
+  READ_ONLY
+  CONTENT_EDITOR
+  PUBLISHER
+  FULL_AGENT
+  CUSTOM
+}
+
+model ApiKey {
+  id              String     @id @default(cuid())
+  name            String
+  keyPrefix       String
+  keyHash         String     @unique
+  role            ApiKeyRole @default(READ_ONLY)
+  scopes          String[]
+  rateLimitPerMin Int        @default(60)
+  lastUsedAt      DateTime?
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  revisions Revision[]
+  drafts    Draft[]
+
+  @@map("api_keys")
+}
+
+// ────────────────────────────── drafts ──────────────────────────────
+
+enum DraftStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum DraftAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model Draft {
+  id            String      @id @default(cuid())
+  entityType    String      // project, timeline, skill, profile, experience, etc.
+  entityId      String?     // null if new entity
+  action        DraftAction @default(CREATE)
+  title         String
+  summary       String?
+  data          Json
+  previousData  Json?
+  status        DraftStatus @default(PENDING)
+  isAiGenerated Boolean     @default(true)
+  aiOrigin      String?
+  reviewNotes   String?
+
+  createdByApiKeyId String?
+  apiKey            ApiKey?   @relation(fields: [createdByApiKeyId], references: [id], onDelete: SetNull)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  reviewedAt DateTime?
+
+  @@index([status, entityType])
+  @@map("drafts")
+}
+
+// ──────────────────────────── revisions ─────────────────────────────
+
+model Revision {
+  id            String   @id @default(cuid())
+  entityType    String   // project, timeline, skill, profile, etc.
+  entityId      String
+  changeType    String   // CREATE, UPDATE, PUBLISH, ARCHIVE, REVERT, DELETE
+  summary       String?
+  previousValue Json?
+  newValue      Json?
+
+  actorId  String?
+  actor    AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  apiKeyId String?
+  apiKey   ApiKey?    @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  isAiGenerated Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("revisions")
+}
+

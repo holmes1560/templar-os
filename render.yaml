@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: templar-os
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: pnpm install && pnpm prisma generate && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: PORTFOLIO_API_URL
+        sync: false
+      - key: DEV_API_KEY
+        sync: false

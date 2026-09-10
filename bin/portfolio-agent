@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# TEMPLAR OS Portfolio Agent CLI Launcher
+TARGET="${BASH_SOURCE[0]}"
+while [ -L "$TARGET" ]; do
+  TARGET_DIR="$(cd -P "$(dirname "$TARGET")" && pwd)"
+  TARGET="$(readlink "$TARGET")"
+  [[ $TARGET != /* ]] && TARGET="$TARGET_DIR/$TARGET"
+done
+DIR="$(cd -P "$(dirname "$TARGET")/.." && pwd)"
+exec pnpm --dir "$DIR" cli "$@"

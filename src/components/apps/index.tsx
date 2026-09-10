@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useProjects } from "../os/PortfolioProvider";
+import {
+  useProjects,
+  useProfile,
+  useSkills,
+  useSocialLinks,
+  useResume,
+} from "../os/PortfolioProvider";
 import { site } from "@/lib/site";
 import { useOS } from "@/lib/store";
 import { Icon } from "../os/Icon";
 import { ProjectsApp } from "./ProjectsApp";
+import { TimelineApp } from "./TimelineApp";
 import { TerminalApp } from "./TerminalApp";
 import { LiveApp } from "./LiveApp";
 
@@ -34,6 +41,7 @@ export function AppHost({ appId, props }: { appId: string; props?: Record<string
 
   switch (appId) {
     case "projects": return <ProjectsApp initialSlug={props?.slug as string | undefined} />;
+    case "timeline": return <TimelineApp />;
     case "terminal": return <TerminalApp />;
     case "about":    return <AboutApp />;
     case "skills":   return <SkillsApp />;
@@ -72,66 +80,48 @@ function P({ children }: { children: React.ReactNode }) {
 /* ─────────────────────────────  about  ───────────────────────────── */
 
 function AboutApp() {
+  const profile = useProfile();
+
   return (
     <Pane>
-      <H>{site.name}</H>
-      <p className="label mb-5">{site.role} · {site.location}</p>
+      <H>{profile.fullName || site.name}</H>
+      <p className="label mb-5">
+        {profile.title || site.role} · {profile.location || site.location}
+      </p>
 
-      <P>
-        I build software across an unusually wide range of layers, mostly because
-        I kept refusing to pick one. In the same year I wrote ESP32 firmware for a
-        door lock, an escrow ledger that never stores a balance, and a desktop app
-        that spends most of its energy working around LibreOffice.
-      </P>
-      <P>
-        The through-line is that I learn by building the thing, breaking it, and
-        then understanding why it broke. Most of what I know arrived that way
-        rather than from a lecture.
-      </P>
+      {profile.bio && <P>{profile.bio}</P>}
+      {profile.aboutMe && <P>{profile.aboutMe}</P>}
 
-      <h2 className="label mb-2.5 mt-7">What I&apos;m drawn to</h2>
-      <ul className="space-y-2">
-        {[
-          "Systems where the failure mode matters more than the happy path.",
-          "Measuring things properly instead of guessing — and admitting it when the measurement was wrong.",
-          "The seam between software and hardware, where the abstractions stop helping.",
-          "Security as a design constraint rather than a feature bolted on later.",
-        ].map((t) => (
-          <li key={t} className="flex gap-2.5 text-sm leading-relaxed text-[var(--os-fg-muted)]">
-            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--os-accent)]" />
-            <span>{t}</span>
-          </li>
-        ))}
-      </ul>
+      {profile.whatImDrawnTo && profile.whatImDrawnTo.length > 0 && (
+        <>
+          <h2 className="label mb-2.5 mt-7">What I&apos;m drawn to</h2>
+          <ul className="space-y-2">
+            {profile.whatImDrawnTo.map((t) => (
+              <li key={t} className="flex gap-2.5 text-sm leading-relaxed text-[var(--os-fg-muted)]">
+                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--os-accent)]" />
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
-      <h2 className="label mb-2.5 mt-7">How I work with AI</h2>
-      <P>
-        I use AI tooling heavily — for research, for debugging, for getting a first
-        implementation on screen fast, and for reviewing my own code. A review of one
-        of my backends surfaced 21 real bugs I had missed. The decisions, the
-        architecture and the final implementation are mine; the iteration speed is not
-        something I&apos;m going to pretend I did without help.
-      </P>
+      {profile.howIWorkWithAi && (
+        <>
+          <h2 className="label mb-2.5 mt-7">How I work with AI</h2>
+          <P>{profile.howIWorkWithAi}</P>
+        </>
+      )}
     </Pane>
   );
 }
 
 /* ─────────────────────────────  skills  ──────────────────────────── */
 
-const SKILL_GROUPS: { name: string; items: string[] }[] = [
-  { name: "Languages", items: ["TypeScript", "JavaScript", "Python", "Java", "C / C++", "SQL"] },
-  { name: "Frontend", items: ["Next.js", "React", "Tailwind", "Vite", "Recharts"] },
-  { name: "Backend", items: ["NestJS", "FastAPI", "Express", "Spring Boot", "Prisma", "SQLAlchemy"] },
-  { name: "Mobile", items: ["React Native", "Expo"] },
-  { name: "Databases", items: ["PostgreSQL", "MySQL", "Supabase", "Redis"] },
-  { name: "DevOps & Cloud", items: ["Docker", "Vercel", "Render", "Railway", "Firebase", "MinIO", "AWS fundamentals"] },
-  { name: "Embedded & Hardware", items: ["ESP32", "Arduino", "MFRC522 RFID", "I²C / SPI", "OpenSCAD", "3D printing"] },
-  { name: "Security & Networking", items: ["tcpdump", "Wireshark", "mtr", "Kali Linux", "WebAuthn", "Row Level Security"] },
-  { name: "AI", items: ["Gemini API", "Anthropic SDK", "A2A / JSON-RPC 2.0", "AI-assisted review"] },
-];
-
 function SkillsApp() {
+  const categories = useSkills();
   const projects = useProjects();
+
   return (
     <Pane>
       <H>Skills</H>
@@ -141,21 +131,25 @@ function SkillsApp() {
       </P>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
-        {SKILL_GROUPS.map((g) => (
-          <section key={g.name}>
-            <h2 className="label mb-2">{g.name}</h2>
+        {categories.map((cat) => (
+          <section key={cat.id}>
+            <h2 className="label mb-2">{cat.name}</h2>
             <div className="flex flex-wrap gap-1.5">
-              {g.items.map((s) => {
-                const uses = projects.filter((p) =>
-                  p.technologies.some((t) => t.toLowerCase().includes(s.toLowerCase().split(" ")[0]))
-                ).length;
+              {cat.skills.map((s) => {
+                const uses =
+                  s.projectCount ??
+                  projects.filter((p) =>
+                    p.technologies.some((t) =>
+                      t.toLowerCase().includes(s.name.toLowerCase().split(" ")[0])
+                    )
+                  ).length;
                 return (
                   <span
-                    key={s}
+                    key={s.id}
                     title={uses ? `${uses} project${uses === 1 ? "" : "s"}` : undefined}
                     className="flex items-center gap-1.5 rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] px-2 py-0.5 font-mono text-[0.68rem] text-[var(--os-fg-muted)]"
                   >
-                    {s}
+                    {s.name}
                     {uses > 0 && (
                       <span className="tnum text-[0.6rem] text-[var(--os-accent)]">{uses}</span>
                     )}
@@ -269,18 +263,51 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
 /* ────────────────────────────  contact  ──────────────────────────── */
 
 function ContactApp() {
+  const profile = useProfile();
+  const socialLinks = useSocialLinks();
+
   return (
     <Pane>
       <H>Contact</H>
       <P>The fastest way to reach me is GitHub. Everything else is below.</P>
       <div className="mt-5 space-y-2">
-        <ContactRow icon="github" label="GitHub" value={site.githubUser} href={site.github} />
-        {site.email && <ContactRow icon="mail" label="Email" value={site.email} href={`mailto:${site.email}`} />}
-        {site.linkedin && <ContactRow icon="globe" label="LinkedIn" value="Profile" href={site.linkedin} />}
+        {profile.githubUrl && (
+          <ContactRow
+            icon="github"
+            label="GitHub"
+            value={profile.shortName || "holmes1560"}
+            href={profile.githubUrl}
+          />
+        )}
+        {profile.email && (
+          <ContactRow
+            icon="mail"
+            label="Email"
+            value={profile.email}
+            href={`mailto:${profile.email}`}
+          />
+        )}
+        {profile.linkedinUrl && (
+          <ContactRow
+            icon="globe"
+            label="LinkedIn"
+            value="Profile"
+            href={profile.linkedinUrl}
+          />
+        )}
+        {socialLinks.map((s) => (
+          <ContactRow
+            key={s.id}
+            icon={s.icon || "globe"}
+            label={s.label}
+            value={s.username || s.platform}
+            href={s.url}
+          />
+        ))}
       </div>
-      {!site.email && (
+      {!profile.email && (
         <p className="mt-6 font-mono text-[0.65rem] leading-relaxed text-[var(--os-fg-faint)]">
-          Email not published yet — add it in <span className="text-[var(--os-fg-muted)]">src/lib/site.ts</span>.
+          Email not published yet — add it in the Admin Panel or profile settings.
         </p>
       )}
     </Pane>
@@ -308,14 +335,19 @@ function ContactRow({ icon, label, value, href }: { icon: string; label: string;
 /* ────────────────────────────  résumé  ───────────────────────────── */
 
 function ResumeApp() {
+  const resume = useResume();
+  const resumeUrl = resume?.downloadUrl || site.resumePath;
+
   return (
     <Pane>
       <H>Résumé</H>
-      {site.resumePath ? (
+      {resumeUrl ? (
         <>
-          <P>The current version, as a PDF.</P>
+          <P>
+            {resume ? `Version: ${resume.version} (${resume.fileName})` : "The current version, as a PDF."}
+          </P>
           <a
-            href={site.resumePath}
+            href={resumeUrl}
             download
             className="pressable inline-flex items-center gap-2 rounded-[var(--os-r-chip)] bg-[var(--os-accent)] px-3 py-2 text-sm font-medium text-[var(--os-accent-fg)]"
           >
@@ -324,9 +356,8 @@ function ResumeApp() {
         </>
       ) : (
         <p className="font-mono text-xs leading-relaxed text-[var(--os-fg-faint)]">
-          No CV attached yet. Drop the chosen PDF into <span className="text-[var(--os-fg-muted)]">/public</span> and
-          set <span className="text-[var(--os-fg-muted)]">resumePath</span> in{" "}
-          <span className="text-[var(--os-fg-muted)]">src/lib/site.ts</span>.
+          No CV attached yet. Upload a CV via the Admin Panel or drop a PDF into{" "}
+          <span className="text-[var(--os-fg-muted)]">/public</span>.
         </p>
       )}
     </Pane>

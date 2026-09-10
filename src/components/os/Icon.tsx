@@ -113,6 +113,46 @@ const P: Record<string, React.ReactNode> = {
       <path d="m16 16 4.5 4.5" />
     </>
   ),
+  timeline: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
+  check: <path d="m5 13 4 4L19 7" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  trash: (
+    <>
+      <path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="1.5" />
+      <path d="M5 15H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 3h9A1.5 1.5 0 0 1 14.5 4.5V5" />
+    </>
+  ),
+  key: (
+    <>
+      <circle cx="8" cy="15" r="4" />
+      <path d="m11 12 8-8M15 8l2 2M18 5l2 2" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </>
+  ),
+  refresh: (
+    <>
+      <path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof P | string;

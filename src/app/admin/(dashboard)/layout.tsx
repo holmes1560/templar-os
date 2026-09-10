@@ -23,15 +23,25 @@ export const metadata: Metadata = {
 
 const NAV = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/profile", label: "Profile" },
   { href: "/admin/projects", label: "Projects" },
+  { href: "/admin/timeline", label: "Timeline" },
+  { href: "/admin/skills", label: "Skills" },
+  { href: "/admin/experience", label: "Experience" },
   { href: "/admin/applications", label: "Applications" },
-  { href: "/admin/import", label: "AI Importer" },
+  { href: "/admin/drafts", label: "Review Queue", badge: true },
+  { href: "/admin/keys", label: "API Keys" },
+  { href: "/admin/revisions", label: "Audit Log" },
+  { href: "/admin/api-docs", label: "API & MCP" },
   { href: "/admin/settings", label: "Settings" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getSession();
   if (!user) redirect("/admin/login");
+
+  const { db } = await import("@/lib/db");
+  const pendingDrafts = await db.draft.count({ where: { status: "PENDING" } });
 
   async function signOut() {
     "use server";
@@ -42,22 +52,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-[var(--os-ground)]">
       <header className="border-b border-[var(--os-line)] bg-[var(--os-surface-1)]">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-5 py-3">
-          <span className="label">TEMPLAR OS · ADMIN</span>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="label font-mono font-semibold tracking-wider text-[var(--os-fg)]">
+              TEMPLAR OS
+            </span>
+            <span className="rounded-[var(--os-r-chip)] bg-[var(--os-surface-3)] px-1.5 py-0.5 font-mono text-[0.6rem] text-[var(--os-accent)]">
+              CMS
+            </span>
+          </div>
 
-          <nav className="flex items-center gap-1">
-            {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="rounded-[var(--os-r-chip)] px-2.5 py-1.5 text-xs text-[var(--os-fg-muted)] transition-colors hover:bg-[var(--os-surface-3)] hover:text-[var(--os-fg)]"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Link
               href="/"
               target="_blank"
@@ -69,15 +74,33 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {user.email}
             </span>
             <form action={signOut}>
-              <button className="pressable rounded-[var(--os-r-chip)] border border-[var(--os-line)] px-2.5 py-1.5 text-xs text-[var(--os-fg-muted)] transition-colors hover:bg-[var(--os-surface-3)]">
+              <button className="pressable rounded-[var(--os-r-chip)] border border-[var(--os-line)] px-2.5 py-1 text-xs text-[var(--os-fg-muted)] transition-colors hover:bg-[var(--os-surface-3)]">
                 Sign out
               </button>
             </form>
           </div>
         </div>
+
+        {/* Sub-nav bar */}
+        <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-5 py-1.5 text-xs">
+          {NAV.map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              className="relative shrink-0 rounded-[var(--os-r-chip)] px-2.5 py-1 text-[var(--os-fg-muted)] transition-colors hover:bg-[var(--os-surface-3)] hover:text-[var(--os-fg)]"
+            >
+              <span>{n.label}</span>
+              {n.badge && pendingDrafts > 0 && (
+                <span className="ml-1.5 rounded-full bg-[var(--os-accent)] px-1.5 py-0.2 font-mono text-[0.6rem] text-[var(--os-accent-fg)]">
+                  {pendingDrafts}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-5 py-8">{children}</main>
     </div>
   );
 }

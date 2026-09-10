@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useProjects } from "../os/PortfolioProvider";
+import { useProjects, useProfile, useTimeline } from "../os/PortfolioProvider";
 import { site, os } from "@/lib/site";
 import { useOS } from "@/lib/store";
 
@@ -15,6 +15,7 @@ const HELP = `Available commands
   about       who I am
   projects    list every project
   open <slug> open a project in the Projects app
+  timeline    view career timeline milestones
   skills      technologies I actually use
   github      open my GitHub profile
   whoami      short version
@@ -26,6 +27,8 @@ Tab completes. ↑ / ↓ walk history.`;
 
 export function TerminalApp() {
   const projects = useProjects();
+  const profile = useProfile();
+  const timeline = useTimeline();
   const openApp = useOS((s) => s.openApp);
   const notify = useOS((s) => s.notify);
 
@@ -62,7 +65,7 @@ export function TerminalApp() {
       case "about":
         push({
           kind: "out",
-          text: `${site.name}\n${site.role}\n\n${site.tagline}\n\nBased in ${site.location}.`,
+          text: `${profile.fullName || site.name}\n${profile.title || site.role}\n\n${profile.bio || site.tagline}\n\nBased in ${profile.location || site.location}.`,
         });
         break;
 
@@ -85,6 +88,25 @@ export function TerminalApp() {
         }
         openApp("projects", { title: "Projects", w: 940, h: 620, props: { slug } });
         push({ kind: "out", text: `Opening ${hit.title}…` });
+        break;
+      }
+
+      case "timeline": {
+        if (args[0] === "open") {
+          openApp("timeline", { title: "Career Timeline", w: 900, h: 580 });
+          push({ kind: "out", text: "Opening Career Timeline window…" });
+          break;
+        }
+        push({
+          kind: "out",
+          text: timeline
+            .map(
+              (t) =>
+                `  [${t.startDate.padEnd(8)}] ${(t.title + (t.organization ? ` (${t.organization})` : "")).padEnd(42)} ${t.shortDescription}`
+            )
+            .join("\n"),
+        });
+        push({ kind: "out", text: `\n${timeline.length} milestones. Try: timeline open` });
         break;
       }
 
@@ -161,7 +183,7 @@ export function TerminalApp() {
     }
     if (e.key === "Tab") {
       e.preventDefault();
-      const cmds = ["help", "about", "projects", "open", "skills", "github", "whoami", "neofetch", "date", "clear"];
+      const cmds = ["help", "about", "projects", "open", "timeline", "skills", "github", "whoami", "neofetch", "date", "clear"];
       const hit = cmds.find((c) => c.startsWith(val.trim()));
       if (hit) setVal(hit + " ");
     }
