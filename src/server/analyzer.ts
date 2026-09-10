@@ -577,7 +577,7 @@ export async function testAiModelConnection(
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
+      const timeout = setTimeout(() => controller.abort(), 15000);
 
       const isFlash36 = normalizedModel.includes("3.6-flash");
       const requestBody: Record<string, unknown> = {
@@ -602,7 +602,7 @@ export async function testAiModelConnection(
       const latency = Date.now() - t0;
       const data = (await res.json()) as {
         candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>;
-        error?: { message?: string };
+        error?: { message?: string; status?: string };
       };
 
       if (!res.ok || data.error) {
@@ -618,7 +618,7 @@ export async function testAiModelConnection(
       if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
         return {
           ok: false,
-          error: "Connection timed out after 30s. The model may be busy, queuing, or generating deep thinking tokens. Try testing again or switch to gemini-3.6-flash.",
+          error: `Connection timed out after 15s. "${normalizedModel}" is either queued or generating deep reasoning tokens on Google's API. For instant, low-latency responses, switch to gemini-3.6-flash.`,
         };
       }
       const msg = err instanceof Error ? err.message : "Connection test failed.";
