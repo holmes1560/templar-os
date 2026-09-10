@@ -2,7 +2,7 @@ import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -71,9 +71,9 @@ export const AnalysisSchema = z.object({
   features: z.array(z.string()),
   challenges: z.array(z.string()),
 
-  architecture: z.string().nullable(),
-  projectType: z.string().nullable(),
-  liveUrlFound: z.string().nullable(),
+  architecture: z.string().nullable().optional(),
+  projectType: z.string().nullable().optional(),
+  liveUrlFound: z.string().nullable().optional(),
 
   suggestedIcon: z.enum([
     "folder", "globe", "terminal", "user", "chart",
@@ -87,6 +87,218 @@ export const AnalysisSchema = z.object({
 });
 
 export type Analysis = z.infer<typeof AnalysisSchema>;
+
+export const GEMINI_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING, description: "Display name of the project" },
+    shortDescription: { type: Type.STRING, description: "Single-sentence factual overview" },
+    longDescription: { type: Type.STRING, description: "Detailed 2-3 paragraph overview" },
+    category: {
+      type: Type.STRING,
+      enum: ["web", "mobile", "cybersecurity", "ai", "hardware", "experiments"],
+      description: "Primary engineering domain",
+    },
+    categoryConfidence: {
+      type: Type.STRING,
+      enum: ["detected", "inferred", "unknown"],
+      description: "Confidence in the category classification",
+    },
+    technologies: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "List of verified tools, libraries, frameworks",
+    },
+    features: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "Core technical features verified in code",
+    },
+    challenges: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "Engineering hurdles or design problems solved",
+    },
+    architecture: {
+      type: Type.STRING,
+      nullable: true,
+      description: "Architecture pattern (e.g., monolith, microservices, event-driven), or null",
+    },
+    projectType: {
+      type: Type.STRING,
+      nullable: true,
+      description: "Type of project (e.g. library, web app, CLI), or null",
+    },
+    liveUrlFound: {
+      type: Type.STRING,
+      nullable: true,
+      description: "Verified live production deployment URL, or null",
+    },
+    suggestedIcon: {
+      type: Type.STRING,
+      enum: [
+        "folder", "globe", "terminal", "user", "chart",
+        "doc", "mail", "files", "github", "pulse", "cog", "note",
+      ],
+      description: "Suggested UI icon for desktop launcher",
+    },
+    applicationName: {
+      type: Type.STRING,
+      description: "Short desktop application name for TEMPLAR OS window manager",
+    },
+    suggestedLaunchMode: {
+      type: Type.STRING,
+      enum: ["iframe", "external", "internal", "demo"],
+      description: "How TEMPLAR OS should open this project",
+    },
+    desktopVisible: {
+      type: Type.BOOLEAN,
+      description: "Whether this project should have a desktop shortcut icon",
+    },
+    unknowns: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "Unverified items or missing information",
+    },
+  },
+  required: [
+    "name",
+    "shortDescription",
+    "longDescription",
+    "category",
+    "categoryConfidence",
+    "technologies",
+    "features",
+    "challenges",
+    "suggestedIcon",
+    "applicationName",
+    "suggestedLaunchMode",
+    "desktopVisible",
+    "unknowns",
+  ],
+};
+
+const ALLOWED_ICONS = new Set([
+  "folder", "globe", "terminal", "user", "chart",
+  "doc", "mail", "files", "github", "pulse", "cog", "note",
+]);
+
+const ALLOWED_CATEGORIES = new Set([
+  "web", "mobile", "cybersecurity", "ai", "hardware", "experiments",
+]);
+
+const ALLOWED_LAUNCH_MODES = new Set(["iframe", "external", "internal", "demo"]);
+
+/**
+ * Sanitizes and fills resilient fallbacks for any missing or non-conforming
+ * fields from LLM outputs before Zod validation. Prevents schema mismatch errors.
+ */
+export function sanitizeAnalysisInput(
+  raw: any,
+  repo: { owner: string; name: string; description?: string | null }
+): Record<string, unknown> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    raw = {};
+  }
+
+  const name =
+    typeof raw.name === "string" && raw.name.trim().length > 0
+      ? raw.name.trim()
+      : repo.name;
+
+  const shortDescription =
+    typeof raw.shortDescription === "string" && raw.shortDescription.trim().length > 0
+      ? raw.shortDescription.trim()
+      : (repo.description || `${repo.name} repository`);
+
+  const longDescription =
+    typeof raw.longDescription === "string" && raw.longDescription.trim().length > 0
+      ? raw.longDescription.trim()
+      : shortDescription;
+
+  const categoryRaw = typeof raw.category === "string" ? raw.category.toLowerCase().trim() : "";
+  const category = ALLOWED_CATEGORIES.has(categoryRaw) ? categoryRaw : "experiments";
+
+  const confRaw = typeof raw.categoryConfidence === "string" ? raw.categoryConfidence.toLowerCase().trim() : "";
+  const categoryConfidence = ["detected", "inferred", "unknown"].includes(confRaw)
+    ? confRaw
+    : "inferred";
+
+  const technologies = Array.isArray(raw.technologies)
+    ? raw.technologies.map((t: unknown) => String(t).trim()).filter(Boolean)
+    : [];
+
+  const features = Array.isArray(raw.features)
+    ? raw.features.map((f: unknown) => String(f).trim()).filter(Boolean)
+    : [];
+
+  const challenges = Array.isArray(raw.challenges)
+    ? raw.challenges.map((c: unknown) => String(c).trim()).filter(Boolean)
+    : [];
+
+  const architecture =
+    typeof raw.architecture === "string" && raw.architecture.trim().length > 0
+      ? raw.architecture.trim()
+      : null;
+
+  const projectType =
+    typeof raw.projectType === "string" && raw.projectType.trim().length > 0
+      ? raw.projectType.trim()
+      : null;
+
+  const liveUrlFound =
+    typeof raw.liveUrlFound === "string" && raw.liveUrlFound.trim().length > 0
+      ? raw.liveUrlFound.trim()
+      : null;
+
+  const iconRaw = typeof raw.suggestedIcon === "string" ? raw.suggestedIcon.toLowerCase().trim() : "";
+  const suggestedIcon = ALLOWED_ICONS.has(iconRaw)
+    ? iconRaw
+    : category === "web"
+      ? "globe"
+      : category === "cybersecurity"
+        ? "pulse"
+        : "terminal";
+
+  const applicationName =
+    typeof raw.applicationName === "string" && raw.applicationName.trim().length > 0
+      ? raw.applicationName.trim()
+      : name;
+
+  const launchModeRaw =
+    typeof raw.suggestedLaunchMode === "string" ? raw.suggestedLaunchMode.toLowerCase().trim() : "";
+  const suggestedLaunchMode = ALLOWED_LAUNCH_MODES.has(launchModeRaw)
+    ? launchModeRaw
+    : liveUrlFound
+      ? "iframe"
+      : "internal";
+
+  const desktopVisible =
+    typeof raw.desktopVisible === "boolean" ? raw.desktopVisible : true;
+
+  const unknowns = Array.isArray(raw.unknowns)
+    ? raw.unknowns.map((u: unknown) => String(u).trim()).filter(Boolean)
+    : [];
+
+  return {
+    name,
+    shortDescription,
+    longDescription,
+    category,
+    categoryConfidence,
+    technologies,
+    features,
+    challenges,
+    architecture,
+    projectType,
+    liveUrlFound,
+    suggestedIcon,
+    applicationName,
+    suggestedLaunchMode,
+    desktopVisible,
+    unknowns,
+  };
+}
 
 /* ──────────────────────────── the prompt ──────────────────────────── */
 
@@ -110,7 +322,27 @@ Rules:
 - liveUrlFound: only a deployment URL the repository actually documents.
   A badge, a placeholder, or example.com is not one — return null.
 - Write shortDescription as one plain sentence. No marketing language.
-- Respond strictly with valid JSON conforming to the requested schema.`;
+- Respond strictly with valid JSON conforming to the requested schema.
+
+Expected JSON schema structure:
+{
+  "name": "Project Name",
+  "shortDescription": "One factual sentence overview.",
+  "longDescription": "Detailed 2-3 paragraph breakdown of architecture, stack, and features.",
+  "category": "web" | "mobile" | "cybersecurity" | "ai" | "hardware" | "experiments",
+  "categoryConfidence": "detected" | "inferred" | "unknown",
+  "technologies": ["TypeScript", "Next.js"],
+  "features": ["Feature 1", "Feature 2"],
+  "challenges": ["Challenge 1", "Challenge 2"],
+  "architecture": "Monolith" | null,
+  "projectType": "Full-Stack Web App" | null,
+  "liveUrlFound": "https://example.com" | null,
+  "suggestedIcon": "folder" | "globe" | "terminal" | "user" | "chart" | "doc" | "mail" | "files" | "github" | "pulse" | "cog" | "note",
+  "applicationName": "Short App Name",
+  "suggestedLaunchMode": "iframe" | "external" | "internal" | "demo",
+  "desktopVisible": true,
+  "unknowns": []
+}`;
 
 function buildUserMessage(
   repo: { owner: string; name: string; description?: string | null },
@@ -821,6 +1053,7 @@ async function analyzeWithGemini(
       config: {
         systemInstruction: SYSTEM,
         responseMimeType: "application/json",
+        responseSchema: GEMINI_RESPONSE_SCHEMA,
       },
     });
 
@@ -830,8 +1063,15 @@ async function analyzeWithGemini(
     }
 
     const cleanedJson = rawText.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
-    const jsonParsed = JSON.parse(cleanedJson);
-    const validated = AnalysisSchema.parse(jsonParsed);
+    let jsonParsed: unknown;
+    try {
+      jsonParsed = JSON.parse(cleanedJson);
+    } catch {
+      return { ok: false, retryable: true, error: "Gemini response was not valid JSON." };
+    }
+
+    const sanitized = sanitizeAnalysisInput(jsonParsed, repo);
+    const validated = AnalysisSchema.parse(sanitized);
 
     return { ok: true, analysis: validated, provider: "gemini", model: normalizedModel };
   } catch (err: unknown) {
@@ -892,7 +1132,10 @@ async function analyzeWithAnthropic(
       return { ok: false, retryable: true, error: "The analysis did not match the expected shape. Try again." };
     }
 
-    return { ok: true, analysis: parsed, provider: "anthropic", model: normalizedModel };
+    const sanitized = sanitizeAnalysisInput(parsed, repo);
+    const validated = AnalysisSchema.parse(sanitized);
+
+    return { ok: true, analysis: validated, provider: "anthropic", model: normalizedModel };
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       return { ok: false, retryable: true, error: "Rate limited by Anthropic API. Try again shortly." };
@@ -963,8 +1206,15 @@ async function analyzeWithOpenAICompatible(
     }
 
     const cleanedJson = rawContent.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
-    const jsonParsed = JSON.parse(cleanedJson);
-    const validated = AnalysisSchema.parse(jsonParsed);
+    let jsonParsed: unknown;
+    try {
+      jsonParsed = JSON.parse(cleanedJson);
+    } catch {
+      return { ok: false, retryable: true, error: `${providerLabel} response was not valid JSON.` };
+    }
+
+    const sanitized = sanitizeAnalysisInput(jsonParsed, repo);
+    const validated = AnalysisSchema.parse(sanitized);
 
     return { ok: true, analysis: validated, provider, model: modelName.trim() };
   } catch (err: unknown) {

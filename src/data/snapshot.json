@@ -653,7 +653,15 @@
     "site.githubUser": "holmes1560",
     "site.email": "",
     "site.linkedin": "",
-    "site.resumePath": ""
+    "site.resumePath": "",
+    "gemini_api_key_enc": "v1.mf9ch10hAAZnBkUn.KTcHVbO5rA7xmd2PQLkQog.FM9dBDlbAbb1oZJPOwS7xnMSmSj5iVo8-FSzh-XUnJmq2U2BBmBApHlwHhNhN4LyjaJUbD0",
+    "ai_secondary_model": "claude-3-7-sonnet-latest",
+    "ai_secondary_provider": "none",
+    "custom_base_url": "https://api.together.xyz/v1",
+    "custom_provider_name": "Custom AI Gateway",
+    "ai_primary_provider": "gemini",
+    "ai_provider": "gemini",
+    "ai_primary_model": "gemini-3.6-flash"
   },
-  "generatedAt": "2026-09-09T10:38:00.768Z"
+  "generatedAt": "2026-09-10T18:08:46.437Z"
 }
