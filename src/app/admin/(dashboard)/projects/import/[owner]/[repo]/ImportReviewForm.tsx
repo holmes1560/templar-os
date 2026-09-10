@@ -31,6 +31,19 @@ const LAUNCH_MODES = [
   { value: "DEMO", label: "DEMO (Self-contained interactive demo)" },
 ];
 
+const PROVIDER_NAMES: Record<string, string> = {
+  gemini: "Google Gemini",
+  anthropic: "Anthropic Claude",
+  openai: "OpenAI",
+  deepseek: "DeepSeek",
+  xai: "xAI (Grok)",
+  groq: "Groq",
+  mistral: "Mistral AI",
+  openrouter: "OpenRouter",
+  ollama: "Ollama",
+  custom: "Custom Provider",
+};
+
 export function ImportReviewForm({
   repo,
   analysis,
@@ -86,7 +99,7 @@ export function ImportReviewForm({
             <span className={`inline-block h-2 w-2 rounded-full ${aiSuccess ? "bg-[var(--os-ok)]" : "bg-[var(--os-warn)]"}`} />
             <span className="font-mono text-xs font-semibold text-[var(--os-fg)]">
               {aiSuccess
-                ? `Analyzed with ${provider === "gemini" ? "Google Gemini" : "Anthropic Claude"}${model ? ` (${model})` : ""}`
+                ? `Analyzed with ${PROVIDER_NAMES[provider] || provider}${model ? ` (${model})` : ""}`
                 : "Fallback Mode"}
             </span>
             {fallbackUsed && (

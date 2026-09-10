@@ -19,11 +19,12 @@ export interface FetchModelsResult {
 
 export async function fetchModelsAction(
   provider: AiProvider,
-  tempKey?: string
+  tempKey?: string,
+  customBaseUrl?: string
 ): Promise<FetchModelsResult> {
   await requireAdmin();
   try {
-    const res = await listAvailableModels(provider, tempKey);
+    const res = await listAvailableModels(provider, tempKey, customBaseUrl);
     return {
       ok: true,
       models: res.models,
@@ -51,11 +52,12 @@ export interface TestConnectionResult {
 export async function testConnectionAction(
   provider: AiProvider,
   model: string,
-  tempKey?: string
+  tempKey?: string,
+  customBaseUrl?: string
 ): Promise<TestConnectionResult> {
   await requireAdmin();
   try {
-    return await testAiModelConnection(provider, model, tempKey);
+    return await testAiModelConnection(provider, model, tempKey, customBaseUrl);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Connection test failed unexpectedly.";
     return { ok: false, error: msg };
@@ -67,8 +69,9 @@ export interface SaveAiConfigPayload {
   primaryModel: string;
   secondaryProvider: AiProvider | "none";
   secondaryModel: string;
-  geminiApiKey?: string | null;
-  anthropicApiKey?: string | null;
+  customProviderName?: string;
+  customBaseUrl?: string;
+  keysToUpdate?: Partial<Record<AiProvider, string>>;
 }
 
 export async function saveAiConfigAction(
@@ -91,8 +94,7 @@ export async function saveAiConfigAction(
       primaryModel: payload.primaryModel,
       secondaryProvider: payload.secondaryProvider,
       secondaryModel: payload.secondaryModel,
-      updatedGeminiKey: Boolean(payload.geminiApiKey?.trim()),
-      updatedAnthropicKey: Boolean(payload.anthropicApiKey?.trim()),
+      updatedKeys: Object.keys(payload.keysToUpdate || {}),
     });
 
     revalidatePath("/admin/settings");

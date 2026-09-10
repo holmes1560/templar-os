@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { AiFullConfig, AiModelInfo, AiProvider } from "@/server/analyzer";
+import {
+  PROVIDERS_CATALOG,
+  type AiModelInfo,
+  type AiProvider,
+} from "@/lib/ai-providers";
+import type { AiFullConfig } from "@/server/analyzer";
 import {
   fetchModelsAction,
   testConnectionAction,
@@ -14,6 +19,8 @@ interface Props {
   initialGeminiModels: AiModelInfo[];
   initialAnthropicModels: AiModelInfo[];
 }
+
+const PROVIDER_KEYS = Object.keys(PROVIDERS_CATALOG) as AiProvider[];
 
 export function AiSettingsManager({
   initialConfig,
@@ -32,17 +39,68 @@ export function AiSettingsManager({
   const [secondaryModel, setSecondaryModel] = useState(initialConfig.secondary.model);
   const [isSecondaryCustom, setIsSecondaryCustom] = useState(false);
 
-  // API Keys inputs
-  const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [showGeminiKey, setShowGeminiKey] = useState(false);
-  const [anthropicApiKey, setAnthropicApiKey] = useState("");
-  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
+  // Custom provider parameters
+  const [customProviderName, setCustomProviderName] = useState(
+    initialConfig.customProvider.name
+  );
+  const [customBaseUrl, setCustomBaseUrl] = useState(
+    initialConfig.customProvider.baseUrl
+  );
 
-  // Model lists state
-  const [geminiModels, setGeminiModels] = useState<AiModelInfo[]>(initialGeminiModels);
-  const [anthropicModels, setAnthropicModels] = useState<AiModelInfo[]>(initialAnthropicModels);
-  const [fetchingGemini, setFetchingGemini] = useState(false);
-  const [fetchingAnthropic, setFetchingAnthropic] = useState(false);
+  // API Keys inputs (per provider)
+  const [keysInput, setKeysInput] = useState<Record<AiProvider, string>>({
+    gemini: "",
+    anthropic: "",
+    openai: "",
+    deepseek: "",
+    xai: "",
+    groq: "",
+    mistral: "",
+    openrouter: "",
+    ollama: "",
+    custom: "",
+  });
+
+  const [visibleKeys, setVisibleKeys] = useState<Record<AiProvider, boolean>>({
+    gemini: false,
+    anthropic: false,
+    openai: false,
+    deepseek: false,
+    xai: false,
+    groq: false,
+    mistral: false,
+    openrouter: false,
+    ollama: false,
+    custom: false,
+  });
+
+  // Cached models per provider
+  const [modelsCache, setModelsCache] = useState<Record<AiProvider, AiModelInfo[]>>({
+    gemini: initialGeminiModels,
+    anthropic: initialAnthropicModels,
+    openai: PROVIDERS_CATALOG.openai.curatedModels,
+    deepseek: PROVIDERS_CATALOG.deepseek.curatedModels,
+    xai: PROVIDERS_CATALOG.xai.curatedModels,
+    groq: PROVIDERS_CATALOG.groq.curatedModels,
+    mistral: PROVIDERS_CATALOG.mistral.curatedModels,
+    openrouter: PROVIDERS_CATALOG.openrouter.curatedModels,
+    ollama: PROVIDERS_CATALOG.ollama.curatedModels,
+    custom: PROVIDERS_CATALOG.custom.curatedModels,
+  });
+
+  const [fetchingModels, setFetchingModels] = useState<Record<AiProvider, boolean>>({
+    gemini: false,
+    anthropic: false,
+    openai: false,
+    deepseek: false,
+    xai: false,
+    groq: false,
+    mistral: false,
+    openrouter: false,
+    ollama: false,
+    custom: false,
+  });
+
   const [modelFetchNote, setModelFetchNote] = useState<string | null>(null);
 
   // Test connection states
@@ -52,6 +110,9 @@ export function AiSettingsManager({
   const [testingSecondary, setTestingSecondary] = useState(false);
   const [secondaryTestResult, setSecondaryTestResult] = useState<TestConnectionResult | null>(null);
 
+  // Vault active tab for clean UI
+  const [activeVaultTab, setActiveVaultTab] = useState<AiProvider>(primaryProvider);
+
   // Save transition
   const [isPending, startTransition] = useTransition();
   const [statusMessage, setStatusMessage] = useState<{
@@ -59,38 +120,26 @@ export function AiSettingsManager({
     text: string;
   } | null>(null);
 
-  // Helpers to fetch models dynamically
+  // Dynamic model fetching
   async function refreshModels(provider: AiProvider) {
-    if (provider === "gemini") {
-      setFetchingGemini(true);
-      setModelFetchNote(null);
-      const res = await fetchModelsAction("gemini", geminiApiKey.trim() || undefined);
-      setFetchingGemini(false);
-      if (res.ok && res.models.length > 0) {
-        setGeminiModels(res.models);
-        setModelFetchNote(
-          res.live
-            ? `Discovered ${res.models.length} Gemini models live from Google API.`
-            : res.error || "Using curated Gemini models."
-        );
-      } else if (res.error) {
-        setModelFetchNote(`Gemini model discovery error: ${res.error}`);
-      }
-    } else {
-      setFetchingAnthropic(true);
-      setModelFetchNote(null);
-      const res = await fetchModelsAction("anthropic", anthropicApiKey.trim() || undefined);
-      setFetchingAnthropic(false);
-      if (res.ok && res.models.length > 0) {
-        setAnthropicModels(res.models);
-        setModelFetchNote(
-          res.live
-            ? `Discovered ${res.models.length} Claude models from Anthropic API.`
-            : res.error || "Using curated Anthropic models."
-        );
-      } else if (res.error) {
-        setModelFetchNote(`Anthropic model discovery error: ${res.error}`);
-      }
+    setFetchingModels((prev) => ({ ...prev, [provider]: true }));
+    setModelFetchNote(null);
+
+    const tempKey = keysInput[provider]?.trim() || undefined;
+    const tempUrl = provider === "custom" ? customBaseUrl.trim() : undefined;
+
+    const res = await fetchModelsAction(provider, tempKey, tempUrl);
+    setFetchingModels((prev) => ({ ...prev, [provider]: false }));
+
+    if (res.ok && res.models.length > 0) {
+      setModelsCache((prev) => ({ ...prev, [provider]: res.models }));
+      setModelFetchNote(
+        res.live
+          ? `Discovered ${res.models.length} models live from ${PROVIDERS_CATALOG[provider].name}.`
+          : res.error || `Using curated models for ${PROVIDERS_CATALOG[provider].name}.`
+      );
+    } else if (res.error) {
+      setModelFetchNote(`Model discovery error for ${PROVIDERS_CATALOG[provider].name}: ${res.error}`);
     }
   }
 
@@ -98,12 +147,11 @@ export function AiSettingsManager({
   async function handleTestPrimary() {
     setTestingPrimary(true);
     setPrimaryTestResult(null);
-    const tempKey =
-      primaryProvider === "gemini"
-        ? geminiApiKey.trim() || undefined
-        : anthropicApiKey.trim() || undefined;
 
-    const res = await testConnectionAction(primaryProvider, primaryModel, tempKey);
+    const tempKey = keysInput[primaryProvider]?.trim() || undefined;
+    const tempUrl = primaryProvider === "custom" ? customBaseUrl.trim() : undefined;
+
+    const res = await testConnectionAction(primaryProvider, primaryModel, tempKey, tempUrl);
     setTestingPrimary(false);
     setPrimaryTestResult(res);
   }
@@ -112,12 +160,11 @@ export function AiSettingsManager({
     if (secondaryProvider === "none") return;
     setTestingSecondary(true);
     setSecondaryTestResult(null);
-    const tempKey =
-      secondaryProvider === "gemini"
-        ? geminiApiKey.trim() || undefined
-        : anthropicApiKey.trim() || undefined;
 
-    const res = await testConnectionAction(secondaryProvider, secondaryModel, tempKey);
+    const tempKey = keysInput[secondaryProvider]?.trim() || undefined;
+    const tempUrl = secondaryProvider === "custom" ? customBaseUrl.trim() : undefined;
+
+    const res = await testConnectionAction(secondaryProvider, secondaryModel, tempKey, tempUrl);
     setTestingSecondary(false);
     setSecondaryTestResult(res);
   }
@@ -127,28 +174,49 @@ export function AiSettingsManager({
     e.preventDefault();
     setStatusMessage(null);
 
+    // Collect updated keys
+    const keysToUpdate: Partial<Record<AiProvider, string>> = {};
+    for (const p of PROVIDER_KEYS) {
+      if (keysInput[p]?.trim()) {
+        keysToUpdate[p] = keysInput[p].trim();
+      }
+    }
+
     startTransition(async () => {
       const res = await saveAiConfigAction({
         primaryProvider,
         primaryModel,
         secondaryProvider,
         secondaryModel,
-        geminiApiKey: geminiApiKey.trim() || null,
-        anthropicApiKey: anthropicApiKey.trim() || null,
+        customProviderName: customProviderName.trim(),
+        customBaseUrl: customBaseUrl.trim(),
+        keysToUpdate,
       });
 
       if (res.ok) {
         setStatusMessage({ tone: "ok", text: "AI analyzer settings saved successfully." });
-        setGeminiApiKey("");
-        setAnthropicApiKey("");
+        // Clear entered key values from client state for security
+        setKeysInput({
+          gemini: "",
+          anthropic: "",
+          openai: "",
+          deepseek: "",
+          xai: "",
+          groq: "",
+          mistral: "",
+          openrouter: "",
+          ollama: "",
+          custom: "",
+        });
       } else {
         setStatusMessage({ tone: "crit", text: res.error || "Failed to save AI settings." });
       }
     });
   }
 
-  const activePrimaryModels = primaryProvider === "gemini" ? geminiModels : anthropicModels;
-  const activeSecondaryModels = secondaryProvider === "gemini" ? geminiModels : anthropicModels;
+  const activePrimaryModels = modelsCache[primaryProvider] || [];
+  const activeSecondaryModels =
+    secondaryProvider !== "none" ? modelsCache[secondaryProvider] || [] : [];
 
   return (
     <div className="space-y-6">
@@ -201,77 +269,95 @@ export function AiSettingsManager({
           </div>
 
           <div className="space-y-4">
-            {/* Provider Switch Tabs */}
+            {/* Provider Selector Dropdown / Grid */}
             <div>
               <label className="label mb-1.5 block">Provider</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPrimaryProvider("gemini");
-                    if (!isPrimaryCustom) setPrimaryModel(geminiModels[0]?.id || "gemini-3.8-flash");
-                    setPrimaryTestResult(null);
-                  }}
-                  className={`flex items-center justify-between rounded-[var(--os-r-chip)] border p-3 text-left transition-all ${
-                    primaryProvider === "gemini"
-                      ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08]"
-                      : "border-[var(--os-line)] bg-[var(--os-surface-2)] opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <div>
-                    <div className="font-mono text-xs font-semibold text-[var(--os-fg)]">Google Gemini</div>
-                    <div className="mt-0.5 text-[0.68rem] text-[var(--os-fg-muted)]">
-                      Fast structured JSON extraction
-                    </div>
-                  </div>
-                  <span
-                    className={`h-2.5 w-2.5 rounded-full ${
-                      initialConfig.geminiKeyStatus.configured ? "bg-[var(--os-ok)]" : "bg-[var(--os-warn)]"
-                    }`}
-                  />
-                </button>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {PROVIDER_KEYS.map((p) => {
+                  const def = PROVIDERS_CATALOG[p];
+                  const hasKey = initialConfig.keys[p]?.configured;
+                  const isSelected = primaryProvider === p;
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPrimaryProvider("anthropic");
-                    if (!isPrimaryCustom) setPrimaryModel(anthropicModels[0]?.id || "claude-3-7-sonnet-latest");
-                    setPrimaryTestResult(null);
-                  }}
-                  className={`flex items-center justify-between rounded-[var(--os-r-chip)] border p-3 text-left transition-all ${
-                    primaryProvider === "anthropic"
-                      ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08]"
-                      : "border-[var(--os-line)] bg-[var(--os-surface-2)] opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <div>
-                    <div className="font-mono text-xs font-semibold text-[var(--os-fg)]">Anthropic Claude</div>
-                    <div className="mt-0.5 text-[0.68rem] text-[var(--os-fg-muted)]">
-                      Extended thinking & reasoning
-                    </div>
-                  </div>
-                  <span
-                    className={`h-2.5 w-2.5 rounded-full ${
-                      initialConfig.anthropicKeyStatus.configured ? "bg-[var(--os-ok)]" : "bg-[var(--os-warn)]"
-                    }`}
-                  />
-                </button>
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        setPrimaryProvider(p);
+                        if (!isPrimaryCustom) {
+                          setPrimaryModel(modelsCache[p]?.[0]?.id || def.defaultModel);
+                        }
+                        setPrimaryTestResult(null);
+                        setActiveVaultTab(p);
+                      }}
+                      className={`flex flex-col justify-between rounded-[var(--os-r-chip)] border p-2.5 text-left transition-all ${
+                        isSelected
+                          ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08]"
+                          : "border-[var(--os-line)] bg-[var(--os-surface-2)] opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-semibold text-[var(--os-fg)]">
+                          {def.name}
+                        </span>
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            hasKey ? "bg-[var(--os-ok)]" : "bg-[var(--os-warn)]"
+                          }`}
+                        />
+                      </div>
+                      <span className="mt-1 line-clamp-1 text-[0.65rem] text-[var(--os-fg-faint)]">
+                        {def.tagline}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* If Custom Provider Selected, reveal URL & Name Inputs */}
+            {primaryProvider === "custom" && (
+              <div className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] p-3.5 space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="label mb-1 block">Custom Provider Name</label>
+                    <input
+                      type="text"
+                      value={customProviderName}
+                      onChange={(e) => setCustomProviderName(e.target.value)}
+                      placeholder="e.g. Together AI, Perplexity, Private Gateway"
+                      className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-1.5 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="label mb-1 block">OpenAI-Compatible Base URL</label>
+                    <input
+                      type="text"
+                      value={customBaseUrl}
+                      onChange={(e) => setCustomBaseUrl(e.target.value)}
+                      placeholder="e.g. https://api.together.xyz/v1"
+                      className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-1.5 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Model Selector & Live Fetcher */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="label">Model ID</label>
+                <label className="label">
+                  Model for {PROVIDERS_CATALOG[primaryProvider]?.name}
+                </label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => refreshModels(primaryProvider)}
-                    disabled={fetchingGemini || fetchingAnthropic}
+                    disabled={fetchingModels[primaryProvider]}
                     className="flex items-center gap-1 font-mono text-[0.68rem] text-[var(--os-fg-muted)] hover:text-[var(--os-accent)] disabled:opacity-50"
                   >
-                    <span className={fetchingGemini || fetchingAnthropic ? "animate-spin" : ""}>↻</span>
-                    {fetchingGemini || fetchingAnthropic ? "Fetching models..." : "Refresh models from API"}
+                    <span className={fetchingModels[primaryProvider] ? "animate-spin" : ""}>↻</span>
+                    {fetchingModels[primaryProvider] ? "Fetching models..." : "Refresh models from API"}
                   </button>
                   <button
                     type="button"
@@ -288,7 +374,7 @@ export function AiSettingsManager({
                   type="text"
                   value={primaryModel}
                   onChange={(e) => setPrimaryModel(e.target.value)}
-                  placeholder="e.g. gemini-3.8-flash or claude-3-7-sonnet-latest"
+                  placeholder="Type any model ID, e.g. gpt-4o, deepseek-chat, gemini-3.8-flash"
                   className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-2)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                   required
                 />
@@ -382,57 +468,28 @@ export function AiSettingsManager({
           </div>
 
           <div className="space-y-4">
-            {/* Fallback Provider Radio */}
+            {/* Fallback Provider Select */}
             <div>
               <label className="label mb-1.5 block">Fallback Provider</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSecondaryProvider("none");
-                    setSecondaryTestResult(null);
-                  }}
-                  className={`rounded-[var(--os-r-chip)] border p-2.5 text-center font-mono text-xs transition-all ${
-                    secondaryProvider === "none"
-                      ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08] text-[var(--os-fg)] font-semibold"
-                      : "border-[var(--os-line)] bg-[var(--os-surface-2)] text-[var(--os-fg-muted)] hover:opacity-100"
-                  }`}
-                >
-                  Disabled (No failover)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSecondaryProvider("anthropic");
-                    if (!isSecondaryCustom) setSecondaryModel(anthropicModels[0]?.id || "claude-3-7-sonnet-latest");
-                    setSecondaryTestResult(null);
-                  }}
-                  className={`rounded-[var(--os-r-chip)] border p-2.5 text-center font-mono text-xs transition-all ${
-                    secondaryProvider === "anthropic"
-                      ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08] text-[var(--os-fg)] font-semibold"
-                      : "border-[var(--os-line)] bg-[var(--os-surface-2)] text-[var(--os-fg-muted)] hover:opacity-100"
-                  }`}
-                >
-                  Anthropic Claude
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSecondaryProvider("gemini");
-                    if (!isSecondaryCustom) setSecondaryModel(geminiModels[0]?.id || "gemini-3.8-flash");
-                    setSecondaryTestResult(null);
-                  }}
-                  className={`rounded-[var(--os-r-chip)] border p-2.5 text-center font-mono text-xs transition-all ${
-                    secondaryProvider === "gemini"
-                      ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08] text-[var(--os-fg)] font-semibold"
-                      : "border-[var(--os-line)] bg-[var(--os-surface-2)] text-[var(--os-fg-muted)] hover:opacity-100"
-                  }`}
-                >
-                  Google Gemini
-                </button>
-              </div>
+              <select
+                value={secondaryProvider}
+                onChange={(e) => {
+                  const val = e.target.value as AiProvider | "none";
+                  setSecondaryProvider(val);
+                  if (val !== "none" && !isSecondaryCustom) {
+                    setSecondaryModel(modelsCache[val]?.[0]?.id || PROVIDERS_CATALOG[val].defaultModel);
+                  }
+                  setSecondaryTestResult(null);
+                }}
+                className="w-full appearance-none rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-2)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
+              >
+                <option value="none">Disabled (No failover)</option>
+                {PROVIDER_KEYS.map((p) => (
+                  <option key={p} value={p}>
+                    {PROVIDERS_CATALOG[p].name} {initialConfig.keys[p]?.configured ? "(✓ Configured)" : ""}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* If Secondary is enabled, render model selection */}
@@ -440,14 +497,27 @@ export function AiSettingsManager({
               <div className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] p-3.5 space-y-3">
                 <div>
                   <div className="mb-1.5 flex items-center justify-between">
-                    <label className="label">Fallback Model ID</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsSecondaryCustom(!isSecondaryCustom)}
-                      className="font-mono text-[0.68rem] text-[var(--os-fg-faint)] underline hover:text-[var(--os-fg)]"
-                    >
-                      {isSecondaryCustom ? "Choose from list" : "Enter custom model ID"}
-                    </button>
+                    <label className="label">
+                      Fallback Model for {PROVIDERS_CATALOG[secondaryProvider]?.name}
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => refreshModels(secondaryProvider)}
+                        disabled={fetchingModels[secondaryProvider]}
+                        className="flex items-center gap-1 font-mono text-[0.68rem] text-[var(--os-fg-muted)] hover:text-[var(--os-accent)] disabled:opacity-50"
+                      >
+                        <span className={fetchingModels[secondaryProvider] ? "animate-spin" : ""}>↻</span>
+                        {fetchingModels[secondaryProvider] ? "Fetching..." : "Refresh models"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsSecondaryCustom(!isSecondaryCustom)}
+                        className="font-mono text-[0.68rem] text-[var(--os-fg-faint)] underline hover:text-[var(--os-fg)]"
+                      >
+                        {isSecondaryCustom ? "Choose from list" : "Enter custom model ID"}
+                      </button>
+                    </div>
                   </div>
 
                   {isSecondaryCustom ? (
@@ -455,7 +525,7 @@ export function AiSettingsManager({
                       type="text"
                       value={secondaryModel}
                       onChange={(e) => setSecondaryModel(e.target.value)}
-                      placeholder="e.g. claude-3-7-sonnet-latest"
+                      placeholder="Type custom fallback model ID"
                       className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                       required
                     />
@@ -511,99 +581,115 @@ export function AiSettingsManager({
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-[var(--os-fg)]">Encrypted Credentials Vault</h3>
             <p className="mt-0.5 text-xs text-[var(--os-fg-muted)]">
-              API keys entered here are encrypted at rest using AES-256-GCM. Unset fields fall back to your{" "}
+              Manage keys for all AI providers. Keys saved here are encrypted at rest using AES-256-GCM. Unset fields fall back to your{" "}
               <span className="font-mono">.env</span> file.
             </p>
           </div>
 
-          <div className="space-y-4">
-            {/* Google Gemini Key */}
-            <div className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] p-3.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[var(--os-fg)]">Google Gemini API Key</label>
-                <span
-                  className={`font-mono text-[0.68rem] ${
-                    initialConfig.geminiKeyStatus.configured ? "text-[var(--os-ok)]" : "text-[var(--os-warn)]"
+          {/* Provider Tabs for Vault */}
+          <div className="mb-3 flex flex-wrap gap-1.5 border-b border-[var(--os-line)] pb-3">
+            {PROVIDER_KEYS.map((p) => {
+              const def = PROVIDERS_CATALOG[p];
+              const keyStatus = initialConfig.keys[p];
+              const isSelected = activeVaultTab === p;
+
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setActiveVaultTab(p)}
+                  className={`flex items-center gap-1.5 rounded-[var(--os-r-chip)] border px-2.5 py-1 font-mono text-[0.68rem] transition-all ${
+                    isSelected
+                      ? "border-[var(--os-accent)] bg-[var(--os-accent)]/10 text-[var(--os-accent)] font-semibold"
+                      : "border-[var(--os-line)] bg-[var(--os-surface-2)] text-[var(--os-fg-muted)] hover:text-[var(--os-fg)]"
                   }`}
                 >
-                  {initialConfig.geminiKeyStatus.configured
-                    ? `✓ Configured (${initialConfig.geminiKeyStatus.source === "db" ? "Database" : ".env"})`
-                    : "⚠ Key missing"}
-                </span>
-              </div>
-
-              <div className="relative mt-2">
-                <input
-                  type={showGeminiKey ? "text" : "password"}
-                  value={geminiApiKey}
-                  onChange={(e) => setGeminiApiKey(e.target.value)}
-                  placeholder={
-                    initialConfig.geminiKeyStatus.configured
-                      ? `Key is set (${initialConfig.geminiKeyStatus.masked}) — enter new key to replace`
-                      : "Paste AIzaSy... key"
-                  }
-                  className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-1.5 pr-14 font-mono text-xs text-[var(--os-fg)] placeholder:text-[var(--os-fg-faint)] focus:border-[var(--os-accent)] focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowGeminiKey(!showGeminiKey)}
-                  className="absolute right-2 top-1.5 font-mono text-[0.68rem] text-[var(--os-fg-muted)] hover:text-[var(--os-fg)]"
-                >
-                  {showGeminiKey ? "Hide" : "Show"}
+                  <span>{def.name}</span>
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      keyStatus?.configured ? "bg-[var(--os-ok)]" : "bg-[var(--os-warn)]"
+                    }`}
+                  />
                 </button>
-              </div>
-            </div>
-
-            {/* Anthropic Claude Key */}
-            <div className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] p-3.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-[var(--os-fg)]">Anthropic Claude API Key</label>
-                <span
-                  className={`font-mono text-[0.68rem] ${
-                    initialConfig.anthropicKeyStatus.configured ? "text-[var(--os-ok)]" : "text-[var(--os-warn)]"
-                  }`}
-                >
-                  {initialConfig.anthropicKeyStatus.configured
-                    ? `✓ Configured (${initialConfig.anthropicKeyStatus.source === "db" ? "Database" : ".env"})`
-                    : "⚠ Key missing"}
-                </span>
-              </div>
-
-              <div className="relative mt-2">
-                <input
-                  type={showAnthropicKey ? "text" : "password"}
-                  value={anthropicApiKey}
-                  onChange={(e) => setAnthropicApiKey(e.target.value)}
-                  placeholder={
-                    initialConfig.anthropicKeyStatus.configured
-                      ? `Key is set (${initialConfig.anthropicKeyStatus.masked}) — enter new key to replace`
-                      : "Paste sk-ant-... key"
-                  }
-                  className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-1.5 pr-14 font-mono text-xs text-[var(--os-fg)] placeholder:text-[var(--os-fg-faint)] focus:border-[var(--os-accent)] focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAnthropicKey(!showAnthropicKey)}
-                  className="absolute right-2 top-1.5 font-mono text-[0.68rem] text-[var(--os-fg-muted)] hover:text-[var(--os-fg)]"
-                >
-                  {showAnthropicKey ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
+
+          {/* Active Provider Vault Card */}
+          {(() => {
+            const p = activeVaultTab;
+            const def = PROVIDERS_CATALOG[p];
+            const status = initialConfig.keys[p];
+            const isVisible = visibleKeys[p];
+
+            return (
+              <div className="rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-mono text-xs font-semibold text-[var(--os-fg)]">
+                      {def.name} API Key
+                    </span>
+                    {def.envKey && (
+                      <span className="ml-2 font-mono text-[0.65rem] text-[var(--os-fg-faint)]">
+                        (or {def.envKey} in .env)
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`font-mono text-[0.68rem] ${
+                      status?.configured ? "text-[var(--os-ok)]" : "text-[var(--os-warn)]"
+                    }`}
+                  >
+                    {status?.configured
+                      ? `✓ Configured (${status.source === "db" ? "Database" : ".env"})`
+                      : "⚠ Key missing"}
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={isVisible ? "text" : "password"}
+                    value={keysInput[p]}
+                    onChange={(e) =>
+                      setKeysInput((prev) => ({ ...prev, [p]: e.target.value }))
+                    }
+                    placeholder={
+                      status?.configured
+                        ? `Key is set (${status.masked}) — enter new key to replace`
+                        : `Paste ${def.name} API key...`
+                    }
+                    className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-1.5 pr-14 font-mono text-xs text-[var(--os-fg)] placeholder:text-[var(--os-fg-faint)] focus:border-[var(--os-accent)] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleKeys((prev) => ({ ...prev, [p]: !prev[p] }))
+                    }
+                    className="absolute right-2 top-1.5 font-mono text-[0.68rem] text-[var(--os-fg-muted)] hover:text-[var(--os-fg)]"
+                  >
+                    {isVisible ? "Hide" : "Show"}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Submit Bar */}
         <div className="flex items-center justify-between rounded-[var(--os-r-panel)] border border-[var(--os-line)] bg-[var(--os-surface-1)] p-4">
           <div className="text-xs text-[var(--os-fg-muted)]">
-            Active: <span className="font-mono font-medium text-[var(--os-fg)]">{primaryProvider}</span> /{" "}
-            <span className="font-mono font-medium text-[var(--os-fg)]">{primaryModel}</span>
+            Active:{" "}
+            <span className="font-mono font-medium text-[var(--os-fg)]">
+              {PROVIDERS_CATALOG[primaryProvider]?.name || primaryProvider}
+            </span>{" "}
+            / <span className="font-mono font-medium text-[var(--os-fg)]">{primaryModel}</span>
             {secondaryProvider !== "none" && (
               <>
                 {" "}
                 (Fallback:{" "}
                 <span className="font-mono text-[var(--os-fg)]">
-                  {secondaryProvider}/{secondaryModel}
+                  {PROVIDERS_CATALOG[secondaryProvider]?.name || secondaryProvider}/
+                  {secondaryModel}
                 </span>
                 )
               </>
