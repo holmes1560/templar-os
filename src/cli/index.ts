@@ -109,11 +109,12 @@ async function cmdStatus() {
 
   const t0 = Date.now();
   try {
-    const data = await apiRequest<any>(config, "/api/v1/portfolio");
+    const res = await apiRequest<any>(config, "/api/v1/portfolio");
+    const data = res.data || res;
     const latency = Date.now() - t0;
 
     console.log(`\n✓ Server Connected (${latency}ms)`);
-    console.log(`• Profile      : ${data.profile?.fullName} (${data.profile?.title})`);
+    console.log(`• Profile      : ${data.profile?.fullName || data.profile?.name || "Asenso Owusu Ansah"} (${data.profile?.title || "Computer Science · KNUST"})`);
     console.log(`• Projects     : ${data.projects?.length || 0} published`);
     console.log(`• Milestones   : ${data.timeline?.length || 0} timeline entries`);
     console.log(`• Skills       : ${data.skills?.length || 0} categories`);
