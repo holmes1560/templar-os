@@ -580,11 +580,16 @@ export async function testAiModelConnection(
       const timeout = setTimeout(() => controller.abort(), 15000);
 
       const isFlash36 = normalizedModel.includes("3.6-flash");
+      const isFlash38 = normalizedModel.includes("3.8-flash");
       const requestBody: Record<string, unknown> = {
         contents: [{ parts: [{ text: "Echo back the single word: CONNECTED" }] }],
         generationConfig: {
-          maxOutputTokens: 15,
-          ...(isFlash36 ? { thinkingConfig: { thinkingLevel: "MINIMAL" } } : {}),
+          maxOutputTokens: 60,
+          ...(isFlash36
+            ? { thinkingConfig: { thinkingLevel: "MINIMAL" } }
+            : isFlash38
+            ? { thinkingConfig: { thinkingLevel: "LOW" } }
+            : {}),
         },
       };
 
@@ -602,11 +607,25 @@ export async function testAiModelConnection(
       const latency = Date.now() - t0;
       const data = (await res.json()) as {
         candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>;
-        error?: { message?: string; status?: string };
+        error?: { message?: string; status?: string; code?: number };
       };
 
       if (!res.ok || data.error) {
-        return { ok: false, error: data.error?.message || `Google API status ${res.status}` };
+        const errMsg = data.error?.message || "";
+        if (
+          res.status === 429 ||
+          data.error?.status === "RESOURCE_EXHAUSTED" ||
+          data.error?.code === 429 ||
+          errMsg.toLowerCase().includes("quota")
+        ) {
+          const match = errMsg.match(/retry in ([0-9.]+)s/i);
+          const secs = match ? Math.ceil(parseFloat(match[1])) : 20;
+          return {
+            ok: false,
+            error: `Google Free Tier rate limit reached (20 req/min for ${normalizedModel}). Please wait ~${secs}s before testing again.`,
+          };
+        }
+        return { ok: false, error: errMsg || `Google API status ${res.status}` };
       }
 
       return { ok: true, latencyMs: latency, message: `Connected successfully in ${latency}ms` };
@@ -614,7 +633,7 @@ export async function testAiModelConnection(
       if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
         return {
           ok: false,
-          error: `Connection timed out after 15s. "${normalizedModel}" is either queued or generating deep reasoning tokens on Google's API. For instant, low-latency responses, switch to gemini-3.6-flash.`,
+          error: `Connection timed out after 15s. "${normalizedModel}" is either queued or generating deep reasoning tokens on Google's API. Try again in a moment or switch to gemini-3.6-flash.`,
         };
       }
       const msg = err instanceof Error ? err.message : "Connection test failed.";

@@ -11,6 +11,7 @@ import {
   fetchModelsAction,
   testConnectionAction,
   saveAiConfigAction,
+  saveModelSelectionAction,
   type TestConnectionResult,
 } from "./actions";
 
@@ -38,6 +39,11 @@ export function AiSettingsManager({
   );
   const [secondaryModel, setSecondaryModel] = useState(initialConfig.secondary.model);
   const [isSecondaryCustom, setIsSecondaryCustom] = useState(false);
+
+  const [autoSaveStatus, setAutoSaveStatus] = useState<{
+    target: "primary" | "secondary";
+    state: "saving" | "saved" | "error";
+  } | null>(null);
 
   // Custom provider parameters
   const [customProviderName, setCustomProviderName] = useState(
@@ -143,6 +149,76 @@ export function AiSettingsManager({
     }
   }
 
+  // Model & Provider selection handlers with instant auto-save to DB
+  async function changePrimaryProvider(newProv: AiProvider) {
+    setPrimaryProvider(newProv);
+    const targetModel = modelsCache[newProv]?.[0]?.id || PROVIDERS_CATALOG[newProv].defaultModel;
+    if (!isPrimaryCustom) {
+      setPrimaryModel(targetModel);
+    }
+    setPrimaryTestResult(null);
+    setActiveVaultTab(newProv);
+
+    setAutoSaveStatus({ target: "primary", state: "saving" });
+    const res = await saveModelSelectionAction("primary", newProv, isPrimaryCustom ? primaryModel : targetModel);
+    if (res.ok) {
+      setAutoSaveStatus({ target: "primary", state: "saved" });
+      setTimeout(() => setAutoSaveStatus(null), 3000);
+    } else {
+      setAutoSaveStatus({ target: "primary", state: "error" });
+    }
+  }
+
+  async function changePrimaryModel(newModel: string) {
+    setPrimaryModel(newModel);
+    setPrimaryTestResult(null);
+
+    setAutoSaveStatus({ target: "primary", state: "saving" });
+    const res = await saveModelSelectionAction("primary", primaryProvider, newModel);
+    if (res.ok) {
+      setAutoSaveStatus({ target: "primary", state: "saved" });
+      setTimeout(() => setAutoSaveStatus(null), 3000);
+    } else {
+      setAutoSaveStatus({ target: "primary", state: "error" });
+    }
+  }
+
+  async function changeSecondaryProvider(newProv: AiProvider | "none") {
+    setSecondaryProvider(newProv);
+    const targetModel =
+      newProv !== "none"
+        ? modelsCache[newProv]?.[0]?.id || PROVIDERS_CATALOG[newProv].defaultModel
+        : "";
+    if (!isSecondaryCustom) {
+      setSecondaryModel(targetModel);
+    }
+    setSecondaryTestResult(null);
+    if (newProv !== "none") setActiveVaultTab(newProv);
+
+    setAutoSaveStatus({ target: "secondary", state: "saving" });
+    const res = await saveModelSelectionAction("secondary", newProv, isSecondaryCustom ? secondaryModel : targetModel);
+    if (res.ok) {
+      setAutoSaveStatus({ target: "secondary", state: "saved" });
+      setTimeout(() => setAutoSaveStatus(null), 3000);
+    } else {
+      setAutoSaveStatus({ target: "secondary", state: "error" });
+    }
+  }
+
+  async function changeSecondaryModel(newModel: string) {
+    setSecondaryModel(newModel);
+    setSecondaryTestResult(null);
+
+    setAutoSaveStatus({ target: "secondary", state: "saving" });
+    const res = await saveModelSelectionAction("secondary", secondaryProvider, newModel);
+    if (res.ok) {
+      setAutoSaveStatus({ target: "secondary", state: "saved" });
+      setTimeout(() => setAutoSaveStatus(null), 3000);
+    } else {
+      setAutoSaveStatus({ target: "secondary", state: "error" });
+    }
+  }
+
   // Connection tester
   async function handleTestPrimary() {
     setTestingPrimary(true);
@@ -154,6 +230,11 @@ export function AiSettingsManager({
     const res = await testConnectionAction(primaryProvider, primaryModel, tempKey, tempUrl);
     setTestingPrimary(false);
     setPrimaryTestResult(res);
+
+    if (res.ok) {
+      // Confirm persistence to DB
+      await saveModelSelectionAction("primary", primaryProvider, primaryModel);
+    }
   }
 
   async function handleTestSecondary() {
@@ -167,6 +248,10 @@ export function AiSettingsManager({
     const res = await testConnectionAction(secondaryProvider, secondaryModel, tempKey, tempUrl);
     setTestingSecondary(false);
     setSecondaryTestResult(res);
+
+    if (res.ok) {
+      await saveModelSelectionAction("secondary", secondaryProvider, secondaryModel);
+    }
   }
 
   // Submit full configuration
@@ -263,9 +348,26 @@ export function AiSettingsManager({
                 The primary model invoked for repository analysis and metadata extraction.
               </p>
             </div>
-            <span className="rounded-[var(--os-r-chip)] border border-[var(--os-accent)]/40 bg-[var(--os-accent)]/10 px-2.5 py-0.5 font-mono text-[0.68rem] font-medium text-[var(--os-accent)]">
-              ACTIVE
-            </span>
+            <div className="flex items-center gap-2">
+              {autoSaveStatus?.target === "primary" && (
+                <span
+                  className={`rounded-[var(--os-r-chip)] px-2.5 py-0.5 font-mono text-[0.68rem] transition-all ${
+                    autoSaveStatus.state === "saving"
+                      ? "border border-[var(--os-accent)]/40 bg-[var(--os-accent)]/10 text-[var(--os-accent)] animate-pulse"
+                      : autoSaveStatus.state === "saved"
+                      ? "border border-[var(--os-ok)]/40 bg-[var(--os-ok)]/10 text-[var(--os-ok)]"
+                      : "border border-[var(--os-crit)]/40 bg-[var(--os-crit)]/10 text-[var(--os-crit)]"
+                  }`}
+                >
+                  {autoSaveStatus.state === "saving" && "Saving to DB..."}
+                  {autoSaveStatus.state === "saved" && "✓ Saved to DB"}
+                  {autoSaveStatus.state === "error" && "✕ Save failed"}
+                </span>
+              )}
+              <span className="rounded-[var(--os-r-chip)] border border-[var(--os-accent)]/40 bg-[var(--os-accent)]/10 px-2.5 py-0.5 font-mono text-[0.68rem] font-medium text-[var(--os-accent)]">
+                ACTIVE
+              </span>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -282,14 +384,7 @@ export function AiSettingsManager({
                     <button
                       key={p}
                       type="button"
-                      onClick={() => {
-                        setPrimaryProvider(p);
-                        if (!isPrimaryCustom) {
-                          setPrimaryModel(modelsCache[p]?.[0]?.id || def.defaultModel);
-                        }
-                        setPrimaryTestResult(null);
-                        setActiveVaultTab(p);
-                      }}
+                      onClick={() => changePrimaryProvider(p)}
                       className={`flex flex-col justify-between rounded-[var(--os-r-chip)] border p-2.5 text-left transition-all ${
                         isSelected
                           ? "border-[var(--os-accent)] bg-[var(--os-accent)]/[0.08]"
@@ -373,7 +468,7 @@ export function AiSettingsManager({
                 <input
                   type="text"
                   value={primaryModel}
-                  onChange={(e) => setPrimaryModel(e.target.value)}
+                  onChange={(e) => changePrimaryModel(e.target.value)}
                   placeholder="Type any model ID, e.g. gpt-4o, deepseek-chat, gemini-3.8-flash"
                   className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-2)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                   required
@@ -382,7 +477,7 @@ export function AiSettingsManager({
                 <div className="relative">
                   <select
                     value={primaryModel}
-                    onChange={(e) => setPrimaryModel(e.target.value)}
+                    onChange={(e) => changePrimaryModel(e.target.value)}
                     className="w-full appearance-none rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-2)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                   >
                     {activePrimaryModels.map((m) => (
@@ -456,15 +551,32 @@ export function AiSettingsManager({
                 Automatically triggered if the primary model hits a rate limit, quota exhaustion, or outage.
               </p>
             </div>
-            <span
-              className={`rounded-[var(--os-r-chip)] border px-2 py-0.5 font-mono text-[0.68rem] ${
-                secondaryProvider === "none"
-                  ? "border-[var(--os-line)] bg-[var(--os-surface-2)] text-[var(--os-fg-faint)]"
-                  : "border-[var(--os-ok)]/40 bg-[var(--os-ok)]/10 text-[var(--os-ok)]"
-              }`}
-            >
-              {secondaryProvider === "none" ? "DISABLED" : "FAILOVER READY"}
-            </span>
+            <div className="flex items-center gap-2">
+              {autoSaveStatus?.target === "secondary" && (
+                <span
+                  className={`rounded-[var(--os-r-chip)] px-2.5 py-0.5 font-mono text-[0.68rem] transition-all ${
+                    autoSaveStatus.state === "saving"
+                      ? "border border-[var(--os-accent)]/40 bg-[var(--os-accent)]/10 text-[var(--os-accent)] animate-pulse"
+                      : autoSaveStatus.state === "saved"
+                      ? "border border-[var(--os-ok)]/40 bg-[var(--os-ok)]/10 text-[var(--os-ok)]"
+                      : "border border-[var(--os-crit)]/40 bg-[var(--os-crit)]/10 text-[var(--os-crit)]"
+                  }`}
+                >
+                  {autoSaveStatus.state === "saving" && "Saving to DB..."}
+                  {autoSaveStatus.state === "saved" && "✓ Saved to DB"}
+                  {autoSaveStatus.state === "error" && "✕ Save failed"}
+                </span>
+              )}
+              <span
+                className={`rounded-[var(--os-r-chip)] border px-2 py-0.5 font-mono text-[0.68rem] ${
+                  secondaryProvider === "none"
+                    ? "border-[var(--os-line)] bg-[var(--os-surface-2)] text-[var(--os-fg-faint)]"
+                    : "border-[var(--os-ok)]/40 bg-[var(--os-ok)]/10 text-[var(--os-ok)]"
+                }`}
+              >
+                {secondaryProvider === "none" ? "DISABLED" : "FAILOVER READY"}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -473,14 +585,7 @@ export function AiSettingsManager({
               <label className="label mb-1.5 block">Fallback Provider</label>
               <select
                 value={secondaryProvider}
-                onChange={(e) => {
-                  const val = e.target.value as AiProvider | "none";
-                  setSecondaryProvider(val);
-                  if (val !== "none" && !isSecondaryCustom) {
-                    setSecondaryModel(modelsCache[val]?.[0]?.id || PROVIDERS_CATALOG[val].defaultModel);
-                  }
-                  setSecondaryTestResult(null);
-                }}
+                onChange={(e) => changeSecondaryProvider(e.target.value as AiProvider | "none")}
                 className="w-full appearance-none rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-2)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
               >
                 <option value="none">Disabled (No failover)</option>
@@ -524,7 +629,7 @@ export function AiSettingsManager({
                     <input
                       type="text"
                       value={secondaryModel}
-                      onChange={(e) => setSecondaryModel(e.target.value)}
+                      onChange={(e) => changeSecondaryModel(e.target.value)}
                       placeholder="Type custom fallback model ID"
                       className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                       required
@@ -533,7 +638,7 @@ export function AiSettingsManager({
                     <div className="relative">
                       <select
                         value={secondaryModel}
-                        onChange={(e) => setSecondaryModel(e.target.value)}
+                        onChange={(e) => changeSecondaryModel(e.target.value)}
                         className="w-full appearance-none rounded-[var(--os-r-chip)] border border-[var(--os-line-strong)] bg-[var(--os-surface-3)] px-3 py-2 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                       >
                         {activeSecondaryModels.map((m) => (

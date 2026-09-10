@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { db } from "@/lib/db";
 import { requireAdmin, audit } from "@/server/auth";
 import {
   listAvailableModels,
@@ -101,6 +102,58 @@ export async function saveAiConfigAction(
     return { ok: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to save AI configuration.";
+    return { ok: false, error: msg };
+  }
+}
+
+export async function saveModelSelectionAction(
+  target: "primary" | "secondary",
+  provider: AiProvider | "none",
+  model: string
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireAdmin();
+  try {
+    if (target === "primary" && provider !== "none") {
+      await db.setting.upsert({
+        where: { key: "ai_primary_provider" },
+        update: { value: provider },
+        create: { key: "ai_primary_provider", value: provider },
+      });
+      await db.setting.upsert({
+        where: { key: "ai_provider" },
+        update: { value: provider },
+        create: { key: "ai_provider", value: provider },
+      });
+      await db.setting.upsert({
+        where: { key: "ai_primary_model" },
+        update: { value: model.trim() },
+        create: { key: "ai_primary_model", value: model.trim() },
+      });
+    } else if (target === "secondary") {
+      await db.setting.upsert({
+        where: { key: "ai_secondary_provider" },
+        update: { value: provider },
+        create: { key: "ai_secondary_provider", value: provider },
+      });
+      if (provider !== "none") {
+        await db.setting.upsert({
+          where: { key: "ai_secondary_model" },
+          update: { value: model.trim() },
+          create: { key: "ai_secondary_model", value: model.trim() },
+        });
+      }
+    }
+
+    await audit(user.id, `ai.${target}_selection_updated`, "Setting", provider, {
+      target,
+      provider,
+      model,
+    });
+
+    revalidatePath("/admin/settings");
+    return { ok: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to persist model choice.";
     return { ok: false, error: msg };
   }
 }
