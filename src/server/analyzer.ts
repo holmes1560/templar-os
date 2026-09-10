@@ -25,7 +25,7 @@ import { encryptSecret, decryptSecret } from "./crypto";
  *  admin still has to approve them.
  */
 
-export const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 export const ANTHROPIC_MODEL = "claude-3-7-sonnet-latest";
 
 export type AiProvider = "gemini" | "anthropic";
