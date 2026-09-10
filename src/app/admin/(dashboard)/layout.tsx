@@ -21,27 +21,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const NAV = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/profile", label: "Profile" },
-  { href: "/admin/projects", label: "Projects" },
-  { href: "/admin/timeline", label: "Timeline" },
-  { href: "/admin/skills", label: "Skills" },
-  { href: "/admin/experience", label: "Experience" },
-  { href: "/admin/applications", label: "Applications" },
-  { href: "/admin/drafts", label: "Review Queue", badge: true },
-  { href: "/admin/keys", label: "API Keys" },
-  { href: "/admin/revisions", label: "Audit Log" },
-  { href: "/admin/api-docs", label: "API & MCP" },
-  { href: "/admin/settings", label: "Settings" },
-];
+import { getPendingDraftsCount } from "@/server/drafts";
+import { AdminNav } from "./AdminNav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await getSession();
+  const [user, pendingDrafts] = await Promise.all([
+    getSession(),
+    getPendingDraftsCount(),
+  ]);
   if (!user) redirect("/admin/login");
-
-  const { db } = await import("@/lib/db");
-  const pendingDrafts = await db.draft.count({ where: { status: "PENDING" } });
 
   async function signOut() {
     "use server";
@@ -81,23 +69,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
 
-        {/* Sub-nav bar */}
-        <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-5 py-1.5 text-xs">
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className="relative shrink-0 rounded-[var(--os-r-chip)] px-2.5 py-1 text-[var(--os-fg-muted)] transition-colors hover:bg-[var(--os-surface-3)] hover:text-[var(--os-fg)]"
-            >
-              <span>{n.label}</span>
-              {n.badge && pendingDrafts > 0 && (
-                <span className="ml-1.5 rounded-full bg-[var(--os-accent)] px-1.5 py-0.2 font-mono text-[0.6rem] text-[var(--os-accent-fg)]">
-                  {pendingDrafts}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
+        {/* Client sub-nav bar with pre-warming and instant tab highlighting */}
+        <AdminNav pendingDrafts={pendingDrafts} />
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-8">{children}</main>

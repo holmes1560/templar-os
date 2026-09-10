@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/server/auth";
 import { logRevision } from "@/server/revisions";
+import { invalidateDraftsCache } from "@/server/drafts";
 
 export async function approveDraft(draftId: string) {
   const user = await requireAdmin();
@@ -29,6 +30,7 @@ export async function approveDraft(draftId: string) {
     changeSummary: `Approved draft "${draft.summary || draft.title}"`,
   });
 
+  invalidateDraftsCache();
   revalidatePath("/admin/drafts");
   return { success: true };
 }
@@ -58,6 +60,7 @@ export async function rejectDraft(draftId: string, reason?: string) {
     changeSummary: `Rejected draft "${draft.summary || draft.title}"`,
   });
 
+  invalidateDraftsCache();
   revalidatePath("/admin/drafts");
   return { success: true };
 }
@@ -158,6 +161,7 @@ export async function publishDraft(draftId: string) {
     },
   });
 
+  invalidateDraftsCache();
   revalidatePath("/");
   revalidatePath("/admin/drafts");
   revalidatePath("/admin/projects");

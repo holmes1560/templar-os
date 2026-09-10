@@ -3,6 +3,7 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { hashPassword, verifyPassword } from "./password";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 
@@ -78,25 +79,49 @@ export async function createSession(userId: string) {
   });
 }
 
+const verifiedAdminCache = new Map<string, { user: { id: string; email: string }; expiresAt: number }>();
+
 export async function destroySession() {
+  try {
+    const token = (await cookies()).get(COOKIE)?.value;
+    if (token) {
+      const payload = decode(token);
+      if (payload?.sub) verifiedAdminCache.delete(payload.sub);
+    }
+  } catch {
+    // ignore
+  }
   (await cookies()).delete(COOKIE);
 }
 
 /** Reads and validates the session. Returns null for anonymous visitors. */
-export async function getSession(): Promise<{ id: string; email: string } | null> {
+export const getSession = cache(async (): Promise<{ id: string; email: string } | null> => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
 
   const payload = decode(token);
   if (!payload) return null;
 
+  const now = Date.now();
+  const cached = verifiedAdminCache.get(payload.sub);
+  if (cached && now < cached.expiresAt) {
+    return cached.user;
+  }
+
   // the account must still exist — a deleted admin's cookie must stop working
   const user = await db.adminUser.findUnique({
     where: { id: payload.sub },
     select: { id: true, email: true },
   });
-  return user ?? null;
-}
+
+  if (user) {
+    verifiedAdminCache.set(payload.sub, { user, expiresAt: now + 60_000 });
+    return user;
+  }
+
+  verifiedAdminCache.delete(payload.sub);
+  return null;
+});
 
 /**
  * Guard for every admin server action and route handler.
