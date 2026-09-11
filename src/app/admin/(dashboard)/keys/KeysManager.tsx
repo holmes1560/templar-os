@@ -15,7 +15,7 @@ interface KeyItem {
 }
 
 const AGENT_OPTIONS = [
-  { id: "all", label: "All Agents", icon: "⚡" },
+  { id: "all", label: "All Agents", icon: "🌐" },
   { id: "claude", label: "Claude Desktop", icon: "🤖" },
   { id: "cursor", label: "Cursor IDE", icon: "💻" },
   { id: "claude-code", label: "Claude Code CLI", icon: "⌨️" },
@@ -101,7 +101,7 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
             onClick={() => setShowHelper(!showHelper)}
             className="pressable rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] hover:bg-[var(--os-surface-3)] px-3 py-1.5 text-xs font-medium text-[var(--os-fg)]"
           >
-            {showHelper ? "Close Generator" : "⚡ MCP Install Link"}
+            {showHelper ? "Close Generator" : "Generate MCP Command"}
           </button>
           <button
             onClick={() => {
@@ -132,7 +132,7 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
         <div className="rounded-[var(--os-r-panel)] border border-[var(--os-accent)]/40 bg-[var(--os-surface-1)] p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold text-[var(--os-fg)] flex items-center gap-1.5">
-              <span>⚡</span> Generate Terminal MCP Install Command
+              Generate Terminal MCP Install Command
             </h3>
             <button
               onClick={() => setShowHelper(false)}
@@ -233,7 +233,7 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
           <div className="pt-3 border-t border-[var(--os-ok)]/30 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[0.72rem] font-semibold tracking-wide uppercase text-[var(--os-fg)] flex items-center gap-1">
-                <span>⚡</span> One-Line Terminal MCP Installer
+                One-Line Terminal MCP Installer
               </span>
               <span className="text-[0.68rem] text-[var(--os-fg-muted)] font-mono">
                 Runs via npx without cloning
@@ -381,7 +381,7 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
                   }}
                   className="pressable rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] hover:bg-[var(--os-surface-3)] px-2.5 py-1 text-xs font-medium text-[var(--os-fg)] flex items-center gap-1"
                 >
-                  <span>⚡</span> MCP Command
+                  MCP Command
                 </button>
               )}
               {k.isActive && (
