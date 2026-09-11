@@ -199,8 +199,8 @@ export default async function SettingsPage({
       <section className="mt-6">
         <DesktopHeroSettings
           initialSettings={initialSettings}
-          defaultName={profile?.fullName || "ASENSO OWUSU ANSAH"}
-          defaultTitle={profile?.title || "Software Engineer | Problem Solver | Builder"}
+          defaultName="ASENSO OWUSU ANSAH"
+          defaultTitle="Software Engineer  |  Problem Solver  |  Builder"
           dynamicProjectsCount={publishedProjectsCount}
           dynamicAppsCount={enabledAppsCount}
           dynamicWorkspacesCount={WORKSPACES.length}

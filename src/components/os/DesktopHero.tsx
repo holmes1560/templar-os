@@ -41,11 +41,10 @@ function DesktopHeroContent() {
   const missionCount = useSetting("hero.missionCount", "1");
   const missionLabel = useSetting("hero.missionLabel", "Mission");
 
-  // Configurable text fields with intelligent fallbacks
   const greeting = useSetting("hero.greeting", "WELCOME TO");
   const systemTitle = useSetting("hero.systemName", "Templar OS");
-  const name = useSetting("hero.name", profile?.fullName?.toUpperCase() || "ASENSO OWUSU ANSAH");
-  const subtitle = useSetting("hero.subtitle", profile?.title || "Software Engineer | Problem Solver | Builder");
+  const name = useSetting("hero.name", "ASENSO OWUSU ANSAH");
+  const subtitle = useSetting("hero.subtitle", "Software Engineer  |  Problem Solver  |  Builder");
   const prompt = useSetting("hero.prompt", "Select an application to get started.");
 
   // Title formatting: split "Templar OS" into "Templar" + "OS" with cyan highlight
@@ -84,7 +83,7 @@ function DesktopHeroContent() {
             {name || "ASENSO OWUSU ANSAH"}
           </p>
           <p className="mt-0.5 text-[0.65rem] text-slate-400">
-            {subtitle || "Software Engineer | Problem Solver | Builder"}
+            {subtitle || "Software Engineer  |  Problem Solver  |  Builder"}
           </p>
           <div className="relative my-3.5 flex h-px w-24 mx-auto items-center justify-center">
             <div className="h-px w-full bg-gradient-to-r from-transparent via-[#38bdf8]/70 to-transparent" />

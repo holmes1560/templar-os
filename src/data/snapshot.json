@@ -1625,7 +1625,16 @@
     "site.githubUser": "holmes1560",
     "site.email": "owusuansahasenso1560@gmail.com",
     "site.linkedin": "https://linkedin.com/in/asenso-owusu-ansah",
-    "site.resumePath": ""
+    "site.resumePath": "",
+    "hero.enabled": "true",
+    "hero.showOnAllWorkspaces": "false",
+    "hero.greeting": "WELCOME TO",
+    "hero.systemName": "Templar OS",
+    "hero.name": "ASENSO OWUSU ANSAH",
+    "hero.subtitle": "Software Engineer  |  Problem Solver  |  Builder",
+    "hero.prompt": "Select an application to get started.",
+    "hero.missionCount": "1",
+    "hero.missionLabel": "Mission"
   },
   "generatedAt": "2026-09-10T22:40:46.978Z"
 }

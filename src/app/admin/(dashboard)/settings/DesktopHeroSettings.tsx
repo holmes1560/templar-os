@@ -17,7 +17,7 @@ export interface DesktopHeroSettingsProps {
 export function DesktopHeroSettings({
   initialSettings,
   defaultName = "ASENSO OWUSU ANSAH",
-  defaultTitle = "Software Engineer | Problem Solver | Builder",
+  defaultTitle = "Software Engineer  |  Problem Solver  |  Builder",
   dynamicProjectsCount,
   dynamicAppsCount,
   dynamicWorkspacesCount,
@@ -256,7 +256,7 @@ export function DesktopHeroSettings({
               type="text"
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="Software Engineer | Problem Solver | Builder"
+              placeholder="Software Engineer  |  Problem Solver  |  Builder"
               className="w-full rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] px-3 py-2 text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
             />
           </div>
