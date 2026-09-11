@@ -150,91 +150,61 @@ export function DesktopHeroSettings({
           <div className="os-grid pointer-events-none absolute inset-0 opacity-40" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(56,189,248,0.12),transparent_70%)]" />
 
-          <div className="relative z-10 mx-auto max-w-[560px] py-4">
-            {/* Upper Framed Area with Corner brackets */}
-            <div className="relative flex flex-col items-center">
-              <span className="pointer-events-none absolute left-0 top-[22px] h-3.5 w-3.5 border-l border-t border-[#38bdf8]/40" />
-              <span className="pointer-events-none absolute right-0 top-[22px] h-3.5 w-3.5 border-r border-t border-[#38bdf8]/40" />
-              <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b border-l border-[#38bdf8]/40" />
-              <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b border-r border-[#38bdf8]/40" />
+          <div className="relative z-10 mx-auto max-w-lg">
+            {/* Corner brackets */}
+            <span className="pointer-events-none absolute left-0 top-0 h-3.5 w-3.5 border-l-2 border-t-2 border-[#38bdf8]/40" />
+            <span className="pointer-events-none absolute right-0 top-0 h-3.5 w-3.5 border-r-2 border-t-2 border-[#38bdf8]/40" />
+            <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b-2 border-l-2 border-[#38bdf8]/40" />
+            <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b-2 border-r-2 border-[#38bdf8]/40" />
 
-              <div className="mb-[20px] flex items-center justify-center">
-                <TemplarLogo width={68} height={58} glow />
+            <div className="px-6 py-6">
+              <div className="mb-3 flex justify-center">
+                <TemplarLogo size={48} glow />
               </div>
-
-              <p
-                className="mb-[16px] font-mono text-[10px] font-normal uppercase text-[#7c94b6]"
-                style={{ letterSpacing: "5px" }}
-              >
+              <p className="font-mono text-[0.6rem] uppercase tracking-[0.35em] text-slate-400">
                 {greeting || "WELCOME TO"}
               </p>
-
-              <h3 className="mb-[20px] font-sans text-[38px] font-normal leading-none tracking-tight sm:text-[44px]">
-                <span className="text-white font-normal">{mainTitle}</span>
-                {suffix && (
-                  <span className="ml-2.5 text-[#3894ff] font-normal drop-shadow-[0_0_14px_rgba(56,148,255,0.45)]">
-                    {suffix}
-                  </span>
-                )}
+              <h3 className="my-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                <span className="text-slate-100">{mainTitle}</span>
+                {suffix && <span className="ml-2 text-[#38bdf8] drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]">{suffix}</span>}
               </h3>
-
-              <p
-                className="mb-[12px] font-sans text-[11.5px] font-medium uppercase text-[#cbd5e1]"
-                style={{ letterSpacing: "4px" }}
-              >
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-300">
                 {name || defaultName}
               </p>
-
-              <p className="mb-[26px] font-sans text-[10.5px] font-normal tracking-wide text-[#7c94b6]">
-                {(subtitle || defaultTitle).includes("|") ? (
-                  (subtitle || defaultTitle).split("|").map((part, i, arr) => (
-                    <React.Fragment key={i}>
-                      <span>{part.trim()}</span>
-                      {i < arr.length - 1 && (
-                        <span className="mx-2.5 text-[#475569] font-light">|</span>
-                      )}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  subtitle || defaultTitle
-                )}
+              <p className="mt-0.5 text-[0.65rem] text-slate-400">
+                {subtitle || defaultTitle}
               </p>
-
-              <div className="mb-[26px] h-[1.5px] w-[68px] bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent shadow-[0_0_8px_rgba(56,189,248,0.7)]" />
-
-              <p
-                className="font-sans text-[10.5px] font-normal text-[#7c94b6]"
-                style={{ letterSpacing: "0.5px" }}
-              >
+              <div className="relative my-3.5 flex h-px w-24 mx-auto items-center justify-center">
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-[#38bdf8]/70 to-transparent" />
+                <div className="absolute h-1.5 w-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_6px_#38bdf8]" />
+              </div>
+              <p className="text-[0.62rem] text-slate-400">
                 {prompt}
               </p>
             </div>
+          </div>
 
-            {/* Statistics row */}
-            <div className="mt-[32px] flex w-full items-center justify-between px-2">
-              <div className="flex flex-1 flex-col items-center">
-                <Icon name="monitor" size={16} className="text-[#60a5fa]" />
-                <span className="mt-[10px] font-sans text-[15px] font-medium leading-none text-white">{effectiveWorkspaces}</span>
-                <span className="mt-[7px] font-sans text-[10px] font-normal text-[#7c94b6]">Workspaces</span>
-              </div>
-              <div className="h-[36px] w-[1px] bg-[#334155]/40" />
-              <div className="flex flex-1 flex-col items-center">
-                <Icon name="grid" size={16} className="text-[#60a5fa]" />
-                <span className="mt-[10px] font-sans text-[15px] font-medium leading-none text-white">{effectiveApps}</span>
-                <span className="mt-[7px] font-sans text-[10px] font-normal text-[#7c94b6]">Applications</span>
-              </div>
-              <div className="h-[36px] w-[1px] bg-[#334155]/40" />
-              <div className="flex flex-1 flex-col items-center">
-                <Icon name="folder" size={16} className="text-[#60a5fa]" />
-                <span className="mt-[10px] font-sans text-[15px] font-medium leading-none text-white">{effectiveProjects}</span>
-                <span className="mt-[7px] font-sans text-[10px] font-normal text-[#7c94b6]">Projects</span>
-              </div>
-              <div className="h-[36px] w-[1px] bg-[#334155]/40" />
-              <div className="flex flex-1 flex-col items-center">
-                <Icon name="code" size={16} className="text-[#60a5fa]" />
-                <span className="mt-[10px] font-sans text-[15px] font-medium leading-none text-white">{missionCount}</span>
-                <span className="mt-[7px] font-sans text-[10px] font-normal text-[#7c94b6]">{missionLabel}</span>
-              </div>
+          {/* Preview metrics */}
+          <div className="relative z-10 mt-5 flex justify-center gap-6 border-t border-slate-800/80 pt-4">
+            <div className="flex flex-col items-center">
+              <Icon name="monitor" size={14} className="text-slate-400" />
+              <span className="font-mono text-xs font-semibold text-slate-200">{effectiveWorkspaces}</span>
+              <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">Workspaces</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <Icon name="grid" size={14} className="text-slate-400" />
+              <span className="font-mono text-xs font-semibold text-slate-200">{effectiveApps}</span>
+              <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">Applications</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <Icon name="folder" size={14} className="text-slate-400" />
+              <span className="font-mono text-xs font-semibold text-slate-200">{effectiveProjects}</span>
+              <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">Projects</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <Icon name="code" size={14} className="text-slate-400" />
+              <span className="font-mono text-xs font-semibold text-slate-200">{missionCount}</span>
+              <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">{missionLabel}</span>
             </div>
           </div>
         </div>

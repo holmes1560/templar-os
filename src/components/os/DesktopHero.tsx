@@ -13,12 +13,9 @@ export interface DesktopHeroProps {
 /**
  * Desktop Hero HUD Watermark
  *
- * Spacious, minimalist cyber-monastic HUD composition centered on the desktop.
+ * Exact code from the Admin Panel preview verbatim.
  * Strictly non-interactive (pointer-events-none select-none) so it never
  * obstructs desktop icon dragging, clicking, or window management.
- *
- * Measurements, typography weights, letter-spacing, and vertical spacing are
- * grounded directly in the 1650x925 reference composition.
  */
 export function DesktopHero({ workspace }: DesktopHeroProps) {
   const enabled = useSetting("hero.enabled", "true") !== "false";
@@ -37,18 +34,18 @@ function DesktopHeroContent() {
   const projects = useProjects();
   const apps = useApps();
 
-  // Dynamic system counts with intelligent fallbacks matching live system
-  const workspacesCount = useSetting("hero.workspacesCount") || String(WORKSPACES.length || 4);
-  const activeAppsCount = useSetting("hero.appsCount") || String(apps.filter((a) => a.appKey !== "webview").length || 12);
-  const projectsCount = useSetting("hero.projectsCount") || String(projects.length || 18);
+  // Dynamic system counts
+  const workspacesCount = useSetting("hero.workspacesCount") || String(WORKSPACES.length);
+  const activeAppsCount = useSetting("hero.appsCount") || String(apps.filter((a) => a.appKey !== "webview").length);
+  const projectsCount = useSetting("hero.projectsCount") || String(projects.length);
   const missionCount = useSetting("hero.missionCount", "1");
   const missionLabel = useSetting("hero.missionLabel", "Mission");
 
   // Configurable text fields with intelligent fallbacks
   const greeting = useSetting("hero.greeting", "WELCOME TO");
   const systemTitle = useSetting("hero.systemName", "Templar OS");
-  const ownerName = useSetting("hero.name", profile?.fullName?.toUpperCase() || "ASENSO OWUSU ANSAH");
-  const subtitle = useSetting("hero.subtitle", "Software Engineer | Problem Solver | Builder");
+  const name = useSetting("hero.name", profile?.fullName?.toUpperCase() || "ASENSO OWUSU ANSAH");
+  const subtitle = useSetting("hero.subtitle", profile?.title || "Software Engineer | Problem Solver | Builder");
   const prompt = useSetting("hero.prompt", "Select an application to get started.");
 
   // Title formatting: split "Templar OS" into "Templar" + "OS" with cyan highlight
@@ -59,134 +56,67 @@ function DesktopHeroContent() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center"
+      className="pointer-events-none absolute inset-0 z-0 flex select-none flex-col items-center justify-center pb-12"
     >
-      {/* ── Central Welcome Container (Width: 560px, visually centered) ── */}
-      <div
-        className="relative flex w-[560px] flex-col items-center justify-center text-center px-4"
-        style={{ maxWidth: "calc(100vw - 32px)" }}
-      >
-        {/* Upper Framed Area with Technical HUD Corner Brackets */}
-        <div className="relative flex w-full flex-col items-center">
-          {/* Subtle Technical Corner Brackets */}
-          <span className="pointer-events-none absolute left-0 top-[28px] h-4 w-4 border-l border-t border-[#38bdf8]/40" />
-          <span className="pointer-events-none absolute right-0 top-[28px] h-4 w-4 border-r border-t border-[#38bdf8]/40" />
-          <span className="pointer-events-none absolute bottom-0 left-0 h-4 w-4 border-b border-l border-[#38bdf8]/40" />
-          <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b border-r border-[#38bdf8]/40" />
+      <div className="relative z-10 mx-auto max-w-lg text-center">
+        {/* Corner brackets */}
+        <span className="pointer-events-none absolute left-0 top-0 h-3.5 w-3.5 border-l-2 border-t-2 border-[#38bdf8]/40" />
+        <span className="pointer-events-none absolute right-0 top-0 h-3.5 w-3.5 border-r-2 border-t-2 border-[#38bdf8]/40" />
+        <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b-2 border-l-2 border-[#38bdf8]/40" />
+        <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b-2 border-r-2 border-[#38bdf8]/40" />
 
-          {/* 1. Templar Logo (84px wide, 72px high, center aligned, 26px space below) */}
-          <div className="mb-[26px] flex items-center justify-center">
-            <TemplarLogo width={84} height={72} glow />
+        <div className="px-6 py-6">
+          <div className="mb-3 flex justify-center">
+            <TemplarLogo size={48} glow />
           </div>
-
-          {/* 2. "WELCOME TO" (10.5px monospace font, 6px letter spacing, uppercase, 20px space below) */}
-          <p
-            className="mb-[20px] font-mono text-[10.5px] font-normal uppercase text-[#7c94b6]"
-            style={{ letterSpacing: "6px" }}
-          >
-            {greeting}
+          <p className="font-mono text-[0.6rem] uppercase tracking-[0.35em] text-slate-400">
+            {greeting || "WELCOME TO"}
           </p>
-
-          {/* 3. "Templar OS" (48-52px font size, clean font-normal / font-medium weight, leading-none, 26px space below) */}
-          <h1 className="mb-[26px] font-sans text-[48px] font-normal leading-none tracking-tight sm:text-[52px]">
-            <span className="text-white font-normal">{mainTitle}</span>
+          <h3 className="my-1 text-2xl font-bold tracking-tight sm:text-3xl">
+            <span className="text-slate-100">{mainTitle}</span>
             {suffix && (
-              <span className="ml-3 text-[#3894ff] font-normal drop-shadow-[0_0_18px_rgba(56,148,255,0.45)]">
+              <span className="ml-2 text-[#38bdf8] drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]">
                 {suffix}
               </span>
             )}
-          </h1>
-
-          {/* 4. "ASENSO OWUSU ANSAH" (12px font, 4.5px letter spacing, uppercase, 16px space below) */}
-          <p
-            className="mb-[16px] font-sans text-[12px] font-medium uppercase text-[#cbd5e1]"
-            style={{ letterSpacing: "4.5px" }}
-          >
-            {ownerName}
+          </h3>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-300">
+            {name || "ASENSO OWUSU ANSAH"}
           </p>
-
-          {/* 5. Role line (11px font, font-normal, muted blue-gray, 36px space below) */}
-          <p className="mb-[36px] font-sans text-[11px] font-normal tracking-wide text-[#7c94b6]">
-            {subtitle.includes("|") ? (
-              subtitle.split("|").map((part, i, arr) => (
-                <React.Fragment key={i}>
-                  <span>{part.trim()}</span>
-                  {i < arr.length - 1 && (
-                    <span className="mx-3.5 text-[#475569] font-light">|</span>
-                  )}
-                </React.Fragment>
-              ))
-            ) : (
-              subtitle
-            )}
+          <p className="mt-0.5 text-[0.65rem] text-slate-400">
+            {subtitle || "Software Engineer | Problem Solver | Builder"}
           </p>
-
-          {/* 6. Thin accent divider (76px width, 1.5px height, cyan glowing gradient, 34px space below) */}
-          <div className="mb-[34px] h-[1.5px] w-[76px] bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent shadow-[0_0_10px_rgba(56,189,248,0.7)]" />
-
-          {/* 7. Instruction (11px font, font-normal, muted blue-gray, 38px space below) */}
-          <p
-            className="font-sans text-[11px] font-normal text-[#7c94b6]"
-            style={{ letterSpacing: "0.5px" }}
-          >
+          <div className="relative my-3.5 flex h-px w-24 mx-auto items-center justify-center">
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-[#38bdf8]/70 to-transparent" />
+            <div className="absolute h-1.5 w-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_6px_#38bdf8]" />
+          </div>
+          <p className="text-[0.62rem] text-slate-400">
             {prompt}
           </p>
         </div>
+      </div>
 
-        {/* 8. Statistics row (Four items: Workspaces, Applications, Projects, Mission with subtle vertical separators) */}
-        <div className="mt-[38px] flex w-full max-w-[540px] items-center justify-between px-2">
-          {/* Workspaces */}
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="monitor" size={18} className="text-[#60a5fa]" />
-            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
-              {workspacesCount}
-            </span>
-            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
-              Workspaces
-            </span>
-          </div>
-
-          {/* Subtle vertical separator */}
-          <div className="h-[44px] w-[1px] bg-[#334155]/40" />
-
-          {/* Applications */}
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="grid" size={18} className="text-[#60a5fa]" />
-            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
-              {activeAppsCount}
-            </span>
-            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
-              Applications
-            </span>
-          </div>
-
-          {/* Subtle vertical separator */}
-          <div className="h-[44px] w-[1px] bg-[#334155]/40" />
-
-          {/* Projects */}
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="folder" size={18} className="text-[#60a5fa]" />
-            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
-              {projectsCount}
-            </span>
-            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
-              Projects
-            </span>
-          </div>
-
-          {/* Subtle vertical separator */}
-          <div className="h-[44px] w-[1px] bg-[#334155]/40" />
-
-          {/* Mission */}
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="code" size={18} className="text-[#60a5fa]" />
-            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
-              {missionCount}
-            </span>
-            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
-              {missionLabel}
-            </span>
-          </div>
+      {/* Preview metrics */}
+      <div className="relative z-10 mt-5 flex justify-center gap-6 border-t border-slate-800/80 pt-4">
+        <div className="flex flex-col items-center">
+          <Icon name="monitor" size={14} className="text-slate-400" />
+          <span className="font-mono text-xs font-semibold text-slate-200">{workspacesCount}</span>
+          <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">Workspaces</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <Icon name="grid" size={14} className="text-slate-400" />
+          <span className="font-mono text-xs font-semibold text-slate-200">{activeAppsCount}</span>
+          <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">Applications</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <Icon name="folder" size={14} className="text-slate-400" />
+          <span className="font-mono text-xs font-semibold text-slate-200">{projectsCount}</span>
+          <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">Projects</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <Icon name="code" size={14} className="text-slate-400" />
+          <span className="font-mono text-xs font-semibold text-slate-200">{missionCount}</span>
+          <span className="text-[0.55rem] uppercase tracking-wider text-slate-500">{missionLabel}</span>
         </div>
       </div>
     </div>
