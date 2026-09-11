@@ -41,7 +41,8 @@ The TEMPLAR OS portfolio platform is an **agent-agnostic, API-driven system** wi
 
 The portfolio exposes both high-level **MCP tools** and a **versioned REST API** (`/api/v1/...`).
 
-- **Base URL**: Default is `http://localhost:3100` (or the value of `PORTFOLIO_API_URL`).
+- **Base URL**: Production is `https://templar-os.vercel.app` (or local development `http://localhost:3100` via `PORTFOLIO_API_URL`).
+- **NPM Package**: Published as `templar-os` (installed globally via `npx -y templar-os install <client> --key <key>`).
 - **API Key**: Required for authenticated endpoints. Passed as:
   - Header: `Authorization: Bearer <key>`
   - Or Header: `X-API-Key: <key>`
