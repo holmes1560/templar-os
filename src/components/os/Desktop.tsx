@@ -7,6 +7,7 @@ import { useDesktopApps } from "./PortfolioProvider";
 import { openExternalUrl } from "@/lib/navigation";
 import type { PublicApp } from "@/lib/portfolio-types";
 import { Icon } from "./Icon";
+import { DesktopHero } from "./DesktopHero";
 
 /* ── grid geometry ────────────────────────────────────────────────
    Icons occupy cells, not pixels — the way Windows and most Linux
@@ -112,6 +113,9 @@ export function Desktop() {
     >
       <div className="os-grid pointer-events-none absolute inset-0 opacity-60" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_0%,var(--os-accent-wash),transparent_55%)]" />
+
+      {/* Futuristic Desktop Hero Watermark */}
+      <DesktopHero workspace={workspace} />
 
       <div className="pointer-events-none absolute bottom-16 right-8 select-none text-right">
         <div className="font-mono text-[3.5rem] font-semibold leading-none text-[var(--os-fg)] opacity-[0.045]">

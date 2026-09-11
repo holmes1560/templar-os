@@ -157,3 +157,61 @@ export async function saveModelSelectionAction(
     return { ok: false, error: msg };
   }
 }
+
+export interface DesktopHeroSettingsPayload {
+  greeting: string;
+  systemName: string;
+  name: string;
+  subtitle: string;
+  prompt: string;
+  missionCount: string;
+  missionLabel: string;
+  workspacesCount?: string;
+  appsCount?: string;
+  projectsCount?: string;
+  enabled: boolean;
+  showOnAllWorkspaces: boolean;
+}
+
+export async function saveDesktopHeroSettingsAction(
+  payload: DesktopHeroSettingsPayload
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireAdmin();
+
+  const entries: [string, string][] = [
+    ["hero.greeting", payload.greeting.trim()],
+    ["hero.systemName", payload.systemName.trim()],
+    ["hero.name", payload.name.trim()],
+    ["hero.subtitle", payload.subtitle.trim()],
+    ["hero.prompt", payload.prompt.trim()],
+    ["hero.missionCount", payload.missionCount.trim() || "1"],
+    ["hero.missionLabel", payload.missionLabel.trim() || "Mission"],
+    ["hero.workspacesCount", (payload.workspacesCount || "").trim()],
+    ["hero.appsCount", (payload.appsCount || "").trim()],
+    ["hero.projectsCount", (payload.projectsCount || "").trim()],
+    ["hero.enabled", payload.enabled ? "true" : "false"],
+    ["hero.showOnAllWorkspaces", payload.showOnAllWorkspaces ? "true" : "false"],
+  ];
+
+  try {
+    for (const [key, value] of entries) {
+      await db.setting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
+    }
+
+    await audit(user.id, "settings.desktop_hero_updated", "Setting", "desktop_hero", {
+      greeting: payload.greeting,
+      systemName: payload.systemName,
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin/settings");
+    return { ok: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to save desktop hero settings.";
+    return { ok: false, error: msg };
+  }
+}

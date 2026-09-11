@@ -153,6 +153,17 @@ const P: Record<string, React.ReactNode> = {
       <path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5" />
     </>
   ),
+  monitor: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="1.5" />
+      <path d="M8 20h8M12 16v4" />
+    </>
+  ),
+  code: (
+    <>
+      <path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof P | string;

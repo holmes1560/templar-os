@@ -19,7 +19,7 @@ export function PortfolioProvider({
   return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
 }
 
-function usePortfolio(): PortfolioData {
+export function usePortfolio(): PortfolioData {
   const v = useContext(Ctx);
   if (!v) throw new Error("usePortfolio must be used inside <PortfolioProvider>");
   return v;

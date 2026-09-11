@@ -10,6 +10,8 @@ import {
   listAvailableModels,
 } from "@/server/analyzer";
 import { AiSettingsManager } from "./AiSettingsManager";
+import { WORKSPACES } from "@/lib/apps";
+import { DesktopHeroSettings } from "./DesktopHeroSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -36,12 +38,30 @@ export default async function SettingsPage({
   const proto = h.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
   const origin = host ? `${proto}://${host}` : undefined;
 
-  const [status, fullAiConfig, geminiModelsRes, anthropicModelsRes] = await Promise.all([
+  const [
+    status,
+    fullAiConfig,
+    geminiModelsRes,
+    anthropicModelsRes,
+    settingsList,
+    profile,
+    publishedProjectsCount,
+    enabledAppsCount,
+  ] = await Promise.all([
     connectionStatus(origin),
     getAiFullConfig(),
     listAvailableModels("gemini"),
     listAvailableModels("anthropic"),
+    db.setting.findMany(),
+    db.profile.findFirst(),
+    db.project.count({ where: { status: "PUBLISHED", visible: true } }),
+    db.application.count({ where: { enabled: true } }),
   ]);
+
+  const initialSettings: Record<string, string> = {};
+  for (const s of settingsList) {
+    initialSettings[s.key] = s.value;
+  }
   const msg = github ? MESSAGES[github] : ai ? MESSAGES[ai] : undefined;
 
   async function disconnectGitHub() {
@@ -173,6 +193,18 @@ export default async function SettingsPage({
             {status.callbackUrl}
           </code>
         </div>
+      </section>
+
+      {/* Desktop Hero HUD Settings */}
+      <section className="mt-6">
+        <DesktopHeroSettings
+          initialSettings={initialSettings}
+          defaultName={profile?.fullName || "ASENSO OWUSU ANSAH"}
+          defaultTitle={profile?.title || "Software Engineer | Problem Solver | Builder"}
+          dynamicProjectsCount={publishedProjectsCount}
+          dynamicAppsCount={enabledAppsCount}
+          dynamicWorkspacesCount={WORKSPACES.length}
+        />
       </section>
 
       {/* AI Analyzer Configuration (OpenRouter Style) */}
