@@ -182,7 +182,7 @@ function DesktopHeroContent() {
 
           {/* Skills */}
           <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="code" size={18} className="text-[#60a5fa]" />
+            <Icon name="chart" size={18} className="text-[#60a5fa]" />
             <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
               {skillsCount}
             </span>

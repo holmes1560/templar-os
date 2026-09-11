@@ -236,7 +236,7 @@ export function DesktopHeroSettings({
               </div>
               <div className="h-[44px] w-[1px] bg-[#334155]/40" />
               <div className="flex flex-1 flex-col items-center justify-center">
-                <Icon name="code" size={18} className="text-[#60a5fa]" />
+                <Icon name="chart" size={18} className="text-[#60a5fa]" />
                 <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">{effectiveSkills}</span>
                 <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">{skillsLabel}</span>
               </div>
