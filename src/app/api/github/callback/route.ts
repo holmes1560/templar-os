@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     return settings(req, { github: "state_mismatch" });
   }
 
-  const exchanged = await exchangeCode(code);
+  const exchanged = await exchangeCode(code, req.nextUrl.origin);
   if (!exchanged.ok) {
     await audit(user.id, "github.exchange_failed", "GitHubConnection", undefined, { error: exchanged.error });
     return settings(req, { github: "exchange_failed" });

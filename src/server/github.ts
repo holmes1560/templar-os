@@ -25,25 +25,65 @@ export interface GitHubConfig {
   callbackUrl: string;
 }
 
+/**
+ * Resolves the callback URL intelligently:
+ * 1. An explicitly passed origin (e.g. from the incoming request `req.nextUrl.origin`)
+ * 2. GITHUB_CALLBACK_URL if set AND valid for the current environment
+ * 3. VERCEL_PROJECT_PRODUCTION_URL / NEXT_PUBLIC_SITE_URL / VERCEL_URL
+ * 4. Fallback to localhost:3100 in local dev
+ */
+export function resolveCallbackUrl(requestOrigin?: string): string {
+  if (requestOrigin && !requestOrigin.includes("localhost") && !requestOrigin.includes("127.0.0.1")) {
+    return new URL("/api/github/callback", requestOrigin).toString();
+  }
+
+  if (process.env.GITHUB_CALLBACK_URL) {
+    const isProd = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
+    if (!isProd || !process.env.GITHUB_CALLBACK_URL.includes("localhost")) {
+      return process.env.GITHUB_CALLBACK_URL;
+    }
+  }
+
+  if (requestOrigin) {
+    return new URL("/api/github/callback", requestOrigin).toString();
+  }
+
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/api/github/callback`;
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return new URL("/api/github/callback", process.env.NEXT_PUBLIC_SITE_URL).toString();
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/github/callback`;
+  }
+
+  return "http://localhost:3100/api/github/callback";
+}
+
 /** null when the app hasn't been registered yet — never throws */
-export function githubConfig(): GitHubConfig | null {
+export function githubConfig(requestOrigin?: string): GitHubConfig | null {
   const appId = process.env.GITHUB_APP_ID;
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  const callbackUrl = process.env.GITHUB_CALLBACK_URL;
 
-  if (!appId || !clientId || !clientSecret || !callbackUrl) return null;
+  if (!appId || !clientId || !clientSecret) return null;
+  const callbackUrl = resolveCallbackUrl(requestOrigin);
   return { appId, clientId, clientSecret, callbackUrl };
 }
 
 export function isConfigured() {
-  return githubConfig() !== null;
+  return Boolean(
+    process.env.GITHUB_APP_ID &&
+    process.env.GITHUB_CLIENT_ID &&
+    process.env.GITHUB_CLIENT_SECRET
+  );
 }
 
 /* ───────────────────────── authorization ───────────────────────── */
 
-export function authorizeUrl(state: string): string | null {
-  const cfg = githubConfig();
+export function authorizeUrl(state: string, requestOrigin?: string): string | null {
+  const cfg = githubConfig(requestOrigin);
   if (!cfg) return null;
 
   const u = new URL("https://github.com/login/oauth/authorize");
@@ -63,10 +103,10 @@ interface TokenResponse {
   error_description?: string;
 }
 
-export async function exchangeCode(code: string): Promise<
+export async function exchangeCode(code: string, requestOrigin?: string): Promise<
   { ok: true; token: string; refresh?: string; expiresAt?: Date } | { ok: false; error: string }
 > {
-  const cfg = githubConfig();
+  const cfg = githubConfig(requestOrigin);
   if (!cfg) return { ok: false, error: "GitHub is not configured." };
 
   let res: Response;
@@ -108,19 +148,21 @@ export async function getConnection() {
 }
 
 /** Public-safe view: everything the UI needs, never the token. */
-export async function connectionStatus() {
-  if (!isConfigured()) return { state: "unconfigured" as const };
+export async function connectionStatus(requestOrigin?: string) {
+  const callbackUrl = resolveCallbackUrl(requestOrigin);
+  if (!isConfigured()) return { state: "unconfigured" as const, callbackUrl };
 
   const c = await getConnection();
-  if (!c) return { state: "disconnected" as const };
+  if (!c) return { state: "disconnected" as const, callbackUrl };
   if (c.invalidatedAt) {
-    return { state: "invalid" as const, login: c.accountLogin, avatarUrl: c.avatarUrl };
+    return { state: "invalid" as const, login: c.accountLogin, avatarUrl: c.avatarUrl, callbackUrl };
   }
   return {
     state: "connected" as const,
     login: c.accountLogin,
     avatarUrl: c.avatarUrl,
     connectedAt: c.createdAt,
+    callbackUrl,
   };
 }
 

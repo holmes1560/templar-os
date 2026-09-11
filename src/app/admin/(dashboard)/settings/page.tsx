@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { requireAdmin, audit } from "@/server/auth";
 import { connectionStatus } from "@/server/github";
@@ -30,9 +31,13 @@ export default async function SettingsPage({
   searchParams: Promise<{ github?: string; ai?: string }>;
 }) {
   await requireAdmin();
-  const { github, ai } = await searchParams;
+  const [h, { github, ai }] = await Promise.all([headers(), searchParams]);
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+  const origin = host ? `${proto}://${host}` : undefined;
+
   const [status, fullAiConfig, geminiModelsRes, anthropicModelsRes] = await Promise.all([
-    connectionStatus(),
+    connectionStatus(origin),
     getAiFullConfig(),
     listAvailableModels("gemini"),
     listAvailableModels("anthropic"),
@@ -161,6 +166,13 @@ export default async function SettingsPage({
             </p>
           </>
         )}
+
+        <div className="mt-4 pt-3 border-t border-[var(--os-line)] text-xs text-[var(--os-fg-muted)] flex flex-wrap items-center justify-between gap-2">
+          <span>Callback URL:</span>
+          <code className="font-mono text-[var(--os-fg)] select-all bg-[var(--os-surface-2)] px-2 py-0.5 rounded border border-[var(--os-line)]">
+            {status.callbackUrl}
+          </code>
+        </div>
       </section>
 
       {/* AI Analyzer Configuration (OpenRouter Style) */}
