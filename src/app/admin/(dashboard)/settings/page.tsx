@@ -47,6 +47,7 @@ export default async function SettingsPage({
     profile,
     publishedProjectsCount,
     enabledAppsCount,
+    visibleSkillsCount,
   ] = await Promise.all([
     connectionStatus(origin),
     getAiFullConfig(),
@@ -56,6 +57,7 @@ export default async function SettingsPage({
     db.profile.findFirst(),
     db.project.count({ where: { status: "PUBLISHED", visible: true } }),
     db.application.count({ where: { enabled: true } }),
+    db.skill.count({ where: { visible: true } }),
   ]);
 
   const initialSettings: Record<string, string> = {};
@@ -204,6 +206,7 @@ export default async function SettingsPage({
           dynamicProjectsCount={publishedProjectsCount}
           dynamicAppsCount={enabledAppsCount}
           dynamicWorkspacesCount={WORKSPACES.length}
+          dynamicSkillsCount={visibleSkillsCount}
         />
       </section>
 

@@ -164,8 +164,10 @@ export interface DesktopHeroSettingsPayload {
   name: string;
   subtitle: string;
   prompt: string;
-  missionCount: string;
-  missionLabel: string;
+  skillsCount?: string;
+  skillsLabel?: string;
+  missionCount?: string;
+  missionLabel?: string;
   workspacesCount?: string;
   appsCount?: string;
   projectsCount?: string;
@@ -184,8 +186,10 @@ export async function saveDesktopHeroSettingsAction(
     ["hero.name", payload.name.trim()],
     ["hero.subtitle", payload.subtitle.trim()],
     ["hero.prompt", payload.prompt.trim()],
-    ["hero.missionCount", payload.missionCount.trim() || "1"],
-    ["hero.missionLabel", payload.missionLabel.trim() || "Mission"],
+    ["hero.skillsCount", (payload.skillsCount || "").trim()],
+    ["hero.skillsLabel", (payload.skillsLabel || "Skills").trim()],
+    ["hero.missionCount", (payload.skillsCount || payload.missionCount || "").trim()],
+    ["hero.missionLabel", (payload.skillsLabel || payload.missionLabel || "Skills").trim()],
     ["hero.workspacesCount", (payload.workspacesCount || "").trim()],
     ["hero.appsCount", (payload.appsCount || "").trim()],
     ["hero.projectsCount", (payload.projectsCount || "").trim()],

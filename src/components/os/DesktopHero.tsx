@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useProjects, useApps, useProfile, useSetting } from "./PortfolioProvider";
+import { useProjects, useApps, useProfile, useSetting, useSkills } from "./PortfolioProvider";
 import { WORKSPACES } from "@/lib/apps";
 import { Icon } from "./Icon";
 import { TemplarLogo } from "./TemplarLogo";
@@ -33,13 +33,20 @@ function DesktopHeroContent() {
   const profile = useProfile();
   const projects = useProjects();
   const apps = useApps();
+  const skillCategories = useSkills();
 
   // Dynamic system counts
   const workspacesCount = useSetting("hero.workspacesCount") || String(WORKSPACES.length);
   const activeAppsCount = useSetting("hero.appsCount") || String(apps.filter((a) => a.appKey !== "webview").length);
   const projectsCount = useSetting("hero.projectsCount") || String(projects.length);
-  const missionCount = useSetting("hero.missionCount", "1");
-  const missionLabel = useSetting("hero.missionLabel", "Mission");
+  const dynamicSkillsCount = skillCategories.reduce(
+    (acc, cat) => acc + (cat.skills?.length || 0),
+    0
+  );
+  const skillsCount =
+    useSetting("hero.skillsCount") ||
+    (dynamicSkillsCount > 0 ? String(dynamicSkillsCount) : "45");
+  const skillsLabel = useSetting("hero.skillsLabel", "Skills");
 
   const greeting = useSetting("hero.greeting", "WELCOME TO");
   const systemTitle = useSetting("hero.systemName", "Templar OS");
@@ -173,14 +180,14 @@ function DesktopHeroContent() {
           {/* Subtle vertical separator */}
           <div className="h-[44px] w-[1px] bg-[#334155]/40" />
 
-          {/* Mission */}
+          {/* Skills */}
           <div className="flex flex-1 flex-col items-center justify-center">
             <Icon name="code" size={18} className="text-[#60a5fa]" />
             <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
-              {missionCount}
+              {skillsCount}
             </span>
             <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
-              {missionLabel}
+              {skillsLabel}
             </span>
           </div>
         </div>

@@ -12,6 +12,7 @@ export interface DesktopHeroSettingsProps {
   dynamicProjectsCount: number;
   dynamicAppsCount: number;
   dynamicWorkspacesCount: number;
+  dynamicSkillsCount: number;
 }
 
 export function DesktopHeroSettings({
@@ -21,6 +22,7 @@ export function DesktopHeroSettings({
   dynamicProjectsCount,
   dynamicAppsCount,
   dynamicWorkspacesCount,
+  dynamicSkillsCount,
 }: DesktopHeroSettingsProps) {
   const [enabled, setEnabled] = useState<boolean>(
     initialSettings["hero.enabled"] !== "false"
@@ -43,11 +45,11 @@ export function DesktopHeroSettings({
   const [prompt, setPrompt] = useState<string>(
     initialSettings["hero.prompt"] || "Select an application to get started."
   );
-  const [missionCount, setMissionCount] = useState<string>(
-    initialSettings["hero.missionCount"] || "1"
+  const [skillsOverride, setSkillsOverride] = useState<string>(
+    initialSettings["hero.skillsCount"] || ""
   );
-  const [missionLabel, setMissionLabel] = useState<string>(
-    initialSettings["hero.missionLabel"] || "Mission"
+  const [skillsLabel, setSkillsLabel] = useState<string>(
+    initialSettings["hero.skillsLabel"] || initialSettings["hero.missionLabel"] || "Skills"
   );
   const [workspacesOverride, setWorkspacesOverride] = useState<string>(
     initialSettings["hero.workspacesCount"] || ""
@@ -75,8 +77,10 @@ export function DesktopHeroSettings({
       name,
       subtitle,
       prompt,
-      missionCount,
-      missionLabel,
+      skillsCount: skillsOverride,
+      skillsLabel,
+      missionCount: skillsOverride,
+      missionLabel: skillsLabel,
       workspacesCount: workspacesOverride,
       appsCount: appsOverride,
       projectsCount: projectsOverride,
@@ -107,6 +111,7 @@ export function DesktopHeroSettings({
   const effectiveWorkspaces = workspacesOverride.trim() || dynamicWorkspacesCount;
   const effectiveApps = appsOverride.trim() || dynamicAppsCount;
   const effectiveProjects = projectsOverride.trim() || dynamicProjectsCount;
+  const effectiveSkills = skillsOverride.trim() || dynamicSkillsCount;
 
   return (
     <div className="rounded-[var(--os-r-panel)] border border-[var(--os-line)] bg-[var(--os-surface-1)] p-5">
@@ -232,8 +237,8 @@ export function DesktopHeroSettings({
               <div className="h-[44px] w-[1px] bg-[#334155]/40" />
               <div className="flex flex-1 flex-col items-center justify-center">
                 <Icon name="code" size={18} className="text-[#60a5fa]" />
-                <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">{missionCount}</span>
-                <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">{missionLabel}</span>
+                <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">{effectiveSkills}</span>
+                <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">{skillsLabel}</span>
               </div>
             </div>
           </div>
@@ -353,20 +358,22 @@ export function DesktopHeroSettings({
             </div>
 
             <div>
-              <label className="label mb-1 block text-xs">Mission Count &amp; Label</label>
+              <label className="label mb-1 block text-xs">
+                Skills Override &amp; Label <span className="text-[var(--os-fg-faint)]">(Live: {dynamicSkillsCount})</span>
+              </label>
               <div className="flex gap-1.5">
                 <input
                   type="text"
-                  value={missionCount}
-                  onChange={(e) => setMissionCount(e.target.value)}
-                  placeholder="1"
-                  className="w-14 rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] px-2.5 py-1.5 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
+                  value={skillsOverride}
+                  onChange={(e) => setSkillsOverride(e.target.value)}
+                  placeholder={`Auto (${dynamicSkillsCount})`}
+                  className="w-24 rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] px-2.5 py-1.5 font-mono text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                 />
                 <input
                   type="text"
-                  value={missionLabel}
-                  onChange={(e) => setMissionLabel(e.target.value)}
-                  placeholder="Mission"
+                  value={skillsLabel}
+                  onChange={(e) => setSkillsLabel(e.target.value)}
+                  placeholder="Skills"
                   className="flex-1 rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] px-2.5 py-1.5 text-xs text-[var(--os-fg)] focus:border-[var(--os-accent)] focus:outline-none"
                 />
               </div>

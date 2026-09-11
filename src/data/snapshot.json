@@ -1633,8 +1633,8 @@
     "hero.name": "ASENSO OWUSU ANSAH",
     "hero.subtitle": "Software Engineer  |  Problem Solver  |  Builder",
     "hero.prompt": "Select an application to get started.",
-    "hero.missionCount": "1",
-    "hero.missionLabel": "Mission"
+    "hero.skillsCount": "",
+    "hero.skillsLabel": "Skills"
   },
   "generatedAt": "2026-09-10T22:40:46.978Z"
 }
