@@ -26,6 +26,7 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showHelper, setShowHelper] = useState(false);
   const [newSecret, setNewSecret] = useState<{ secret: string; name: string } | null>(null);
+  const [knownSecrets, setKnownSecrets] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -56,7 +57,16 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
       if (res.error) {
         setMsg({ type: "err", text: res.error });
       } else if (res.secret) {
-        setNewSecret({ secret: res.secret, name: res.keyName || "API Key" });
+        const secretVal = res.secret;
+        const keyName = res.keyName || "API Key";
+        const prefix = (res as any).keyPrefix || secretVal.slice(0, 16);
+        setNewSecret({ secret: secretVal, name: keyName });
+        setHelperKey(secretVal);
+        setKnownSecrets((prev) => ({
+          ...prev,
+          [prefix]: secretVal,
+          [keyName]: secretVal,
+        }));
         setShowCreate(false);
       }
     } catch (err: any) {
@@ -98,7 +108,12 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
         </p>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowHelper(!showHelper)}
+            onClick={() => {
+              if (!showHelper && !helperKey && newSecret?.secret) {
+                setHelperKey(newSecret.secret);
+              }
+              setShowHelper(!showHelper);
+            }}
             className="pressable rounded-[var(--os-r-chip)] border border-[var(--os-line)] bg-[var(--os-surface-2)] hover:bg-[var(--os-surface-3)] px-3 py-1.5 text-xs font-medium text-[var(--os-fg)]"
           >
             {showHelper ? "Close Generator" : "Generate MCP Command"}
@@ -167,7 +182,18 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
               </div>
             </div>
             <div>
-              <label className="label mb-1 block">2. API Key (Optional)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label block">2. API Key</label>
+                {newSecret?.secret && helperKey !== newSecret.secret && (
+                  <button
+                    type="button"
+                    onClick={() => setHelperKey(newSecret.secret)}
+                    className="text-[0.68rem] text-[var(--os-accent)] hover:underline"
+                  >
+                    Use newly created key ({newSecret.name})
+                  </button>
+                )}
+              </div>
               <input
                 value={helperKey}
                 onChange={(e) => setHelperKey(e.target.value.trim())}
@@ -375,7 +401,13 @@ export function KeysManager({ keys }: { keys: KeyItem[] }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setHelperKey(`${k.keyPrefix}...`);
+                    const matchedSecret =
+                      knownSecrets[k.keyPrefix] ||
+                      knownSecrets[k.name] ||
+                      (newSecret && (newSecret.secret.startsWith(k.keyPrefix) || newSecret.name === k.name)
+                        ? newSecret.secret
+                        : "");
+                    setHelperKey(matchedSecret || newSecret?.secret || "");
                     setShowHelper(true);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}

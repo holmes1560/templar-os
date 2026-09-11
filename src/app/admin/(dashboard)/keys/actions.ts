@@ -45,7 +45,7 @@ export async function createApiKeyAction(formData: FormData) {
   });
 
   revalidatePath("/admin/keys");
-  return { success: true, secret: rawSecret, keyName: apiKey.name };
+  return { success: true, secret: rawSecret, keyName: apiKey.name, keyPrefix: apiKey.keyPrefix, keyId: apiKey.id };
 }
 
 export async function revokeApiKeyAction(id: string) {
