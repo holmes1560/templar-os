@@ -77,9 +77,9 @@ function DesktopHeroContent() {
           <span className="pointer-events-none absolute bottom-0 left-0 h-4 w-4 border-b border-l border-[#38bdf8]/40" />
           <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b border-r border-[#38bdf8]/40" />
 
-          {/* 1. Templar Logo (84px wide, 72px high, center aligned, 26px space below) */}
+          {/* 1. Templar Logo (104px wide, 72px high, center aligned, 26px space below) */}
           <div className="mb-[26px] flex items-center justify-center">
-            <TemplarLogo width={84} height={72} glow />
+            <TemplarLogo width={104} height={72} glow={false} />
           </div>
 
           {/* 2. "WELCOME TO" (10.5px monospace font, 6px letter spacing, uppercase, 20px space below) */}

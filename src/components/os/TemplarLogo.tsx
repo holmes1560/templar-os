@@ -15,15 +15,15 @@ export interface TemplarLogoProps {
  * Rendered from the brand asset with ambient cyan luminescence.
  */
 export function TemplarLogo({
-  size = 72,
+  size = 104,
   width,
   height,
   className = "",
-  glow = true,
+  glow = false,
   priority = true,
 }: TemplarLogoProps) {
   const w = width ?? size;
-  const h = height ?? Math.round((w * 620) / 789);
+  const h = height ?? Math.round((w * 527) / 764);
 
   return (
     <div

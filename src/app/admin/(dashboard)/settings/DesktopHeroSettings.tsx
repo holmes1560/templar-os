@@ -164,7 +164,7 @@ export function DesktopHeroSettings({
               <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b border-r border-[#38bdf8]/40" />
 
               <div className="mb-[26px] flex items-center justify-center">
-                <TemplarLogo width={84} height={72} glow />
+                <TemplarLogo width={104} height={72} glow={false} />
               </div>
 
               <p
