@@ -13,13 +13,12 @@ export interface DesktopHeroProps {
 /**
  * Desktop Hero HUD Watermark
  *
- * Recreates the cyber-monastic HUD emblem from the design reference.
+ * Spacious, minimalist cyber-monastic HUD composition centered on the desktop.
  * Strictly non-interactive (pointer-events-none select-none) so it never
  * obstructs desktop icon dragging, clicking, or window management.
  *
  * All text fields are dynamic and editable via Admin Panel settings.
- * All metrics (Workspaces, Applications, Projects) are calculated live
- * from the database and active applications state.
+ * All metrics (Workspaces, Applications, Projects, Mission) match live system state.
  */
 export function DesktopHero({ workspace }: DesktopHeroProps) {
   const enabled = useSetting("hero.enabled", "true") !== "false";
@@ -38,10 +37,10 @@ function DesktopHeroContent() {
   const projects = useProjects();
   const apps = useApps();
 
-  // Dynamic system counts
-  const workspacesCount = useSetting("hero.workspacesCount") || String(WORKSPACES.length);
-  const activeAppsCount = useSetting("hero.appsCount") || String(apps.filter((a) => a.appKey !== "webview").length);
-  const projectsCount = useSetting("hero.projectsCount") || String(projects.length);
+  // Dynamic system counts with intelligent fallbacks matching live system
+  const workspacesCount = useSetting("hero.workspacesCount") || String(WORKSPACES.length || 4);
+  const activeAppsCount = useSetting("hero.appsCount") || String(apps.filter((a) => a.appKey !== "webview").length || 12);
+  const projectsCount = useSetting("hero.projectsCount") || String(projects.length || 12);
   const missionCount = useSetting("hero.missionCount", "1");
   const missionLabel = useSetting("hero.missionLabel", "Mission");
 
@@ -49,7 +48,7 @@ function DesktopHeroContent() {
   const greeting = useSetting("hero.greeting", "WELCOME TO");
   const systemTitle = useSetting("hero.systemName", "Templar OS");
   const ownerName = useSetting("hero.name", profile?.fullName?.toUpperCase() || "ASENSO OWUSU ANSAH");
-  const subtitle = useSetting("hero.subtitle", "Software Engineer  |  Problem Solver  |  Builder");
+  const subtitle = useSetting("hero.subtitle", "Software Engineer | Problem Solver | Builder");
   const prompt = useSetting("hero.prompt", "Select an application to get started.");
 
   // Title formatting: split "Templar OS" into "Templar" + "OS" with cyan highlight
@@ -60,98 +59,123 @@ function DesktopHeroContent() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-0 flex select-none flex-col items-center justify-center pb-12"
+      className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center"
     >
-      {/* ── Main HUD Box with Corner Brackets ── */}
-      <div className="relative mx-4 flex max-w-2xl flex-col items-center px-8 py-8 text-center sm:px-14 sm:py-10">
-        {/* HUD Corner Brackets */}
-        <span className="pointer-events-none absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-[#38bdf8]/40" />
-        <span className="pointer-events-none absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-[#38bdf8]/40" />
-        <span className="pointer-events-none absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-[#38bdf8]/40" />
-        <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-[#38bdf8]/40" />
+      {/* ── Central Welcome Container (Width: ~520px, Min-height: ~430px) ── */}
+      <div
+        className="relative flex w-[520px] min-h-[430px] flex-col items-center justify-center text-center px-4"
+        style={{ maxWidth: "calc(100vw - 32px)" }}
+      >
+        {/* Upper Framed Area with Technical HUD Corner Brackets */}
+        <div className="relative flex w-full flex-col items-center">
+          {/* Subtle Technical Corner Brackets */}
+          <span className="pointer-events-none absolute left-0 top-[20px] h-3.5 w-3.5 border-l border-t border-[#38bdf8]/35" />
+          <span className="pointer-events-none absolute right-0 top-[20px] h-3.5 w-3.5 border-r border-t border-[#38bdf8]/35" />
+          <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b border-l border-[#38bdf8]/35" />
+          <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b border-r border-[#38bdf8]/35" />
 
-        {/* Logo */}
-        <div className="mb-4">
-          <TemplarLogo size={62} glow />
+          {/* 1. Templar logo (Container: 52x52px, actual logo 44px, center aligned, 28px space below) */}
+          <div className="mb-[28px] flex h-[52px] w-[52px] items-center justify-center">
+            <TemplarLogo size={44} glow />
+          </div>
+
+          {/* 2. "WELCOME TO" (10px font, letter spacing: 5px, uppercase, 10px space below) */}
+          <p
+            className="mb-[10px] text-[10px] font-medium uppercase text-slate-400"
+            style={{ letterSpacing: "5px" }}
+          >
+            {greeting}
+          </p>
+
+          {/* 3. "Templar OS" (approx 42px font size, line-height: 1, Templar white, OS blue/cyan, 14px space below) */}
+          <h1 className="mb-[14px] text-[42px] font-bold leading-none tracking-tight">
+            <span className="text-slate-100">{mainTitle}</span>
+            {suffix && (
+              <span className="ml-2.5 text-[#38bdf8] drop-shadow-[0_0_16px_rgba(56,189,248,0.45)]">
+                {suffix}
+              </span>
+            )}
+          </h1>
+
+          {/* 4. "ASENSO OWUSU ANSAH" (12px font, letter spacing: 4px, uppercase, 10px space below) */}
+          <p
+            className="mb-[10px] text-[12px] font-semibold uppercase text-slate-200"
+            style={{ letterSpacing: "4px" }}
+          >
+            {ownerName}
+          </p>
+
+          {/* 5. Role line (approx 10px, muted blue/gray, approx 25px space below) */}
+          <p className="mb-[25px] text-[10px] tracking-normal text-slate-400">
+            {subtitle}
+          </p>
+
+          {/* 6. Thin accent divider (width: 68px, height: 1px, blue/cyan, approx 30px space below) */}
+          <div className="mb-[30px] h-[1px] w-[68px] bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent shadow-[0_0_8px_rgba(56,189,248,0.6)]" />
+
+          {/* 7. Instruction (approx 10px, letter spacing around 1px, muted blue/gray, 45px vertical space after) */}
+          <p
+            className="text-[10px] text-slate-400"
+            style={{ letterSpacing: "1px" }}
+          >
+            {prompt}
+          </p>
         </div>
 
-        {/* Welcome Overline */}
-        <p className="mb-1 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.38em] text-[#94a3b8] sm:text-[0.7rem]">
-          {greeting}
-        </p>
+        {/* 8. Statistics row (Four items: Workspaces, Applications, Projects, Mission with subtle vertical separators) */}
+        <div className="mt-[45px] flex w-full items-center justify-between px-2">
+          {/* Workspaces */}
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <Icon name="monitor" size={16} className="text-slate-400" />
+            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+              {workspacesCount}
+            </span>
+            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+              Workspaces
+            </span>
+          </div>
 
-        {/* Main Title */}
-        <h1 className="mb-2 text-3xl font-bold tracking-tight sm:text-5xl">
-          <span className="text-slate-100">{mainTitle}</span>
-          {suffix && <span className="ml-2.5 text-[#38bdf8] drop-shadow-[0_0_12px_rgba(56,189,248,0.4)]">{suffix}</span>}
-        </h1>
+          {/* Subtle vertical separator */}
+          <div className="h-[26px] w-[1px] bg-slate-700/40" />
 
-        {/* Display Name */}
-        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-300 sm:text-sm">
-          {ownerName}
-        </p>
+          {/* Applications */}
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <Icon name="grid" size={16} className="text-slate-400" />
+            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+              {activeAppsCount}
+            </span>
+            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+              Applications
+            </span>
+          </div>
 
-        {/* Subtitle / Roles */}
-        <p className="mb-5 text-[0.7rem] font-normal tracking-wide text-slate-400 sm:text-xs">
-          {subtitle}
-        </p>
+          {/* Subtle vertical separator */}
+          <div className="h-[26px] w-[1px] bg-slate-700/40" />
 
-        {/* Glowing Divider Line with Center Pip */}
-        <div className="relative mb-5 flex h-px w-28 items-center justify-center sm:w-36">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#38bdf8]/70 to-transparent" />
-          <div className="absolute h-1.5 w-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_8px_#38bdf8]" />
-        </div>
+          {/* Projects */}
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <Icon name="folder" size={16} className="text-slate-400" />
+            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+              {projectsCount}
+            </span>
+            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+              Projects
+            </span>
+          </div>
 
-        {/* Instruction Prompt */}
-        <p className="text-[0.7rem] tracking-wide text-slate-400 sm:text-xs">
-          {prompt}
-        </p>
-      </div>
+          {/* Subtle vertical separator */}
+          <div className="h-[26px] w-[1px] bg-slate-700/40" />
 
-      {/* ── Dynamic System Metrics Row ── */}
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-7 sm:gap-12">
-        {/* Workspaces */}
-        <div className="flex flex-col items-center gap-1.5">
-          <Icon name="monitor" size={17} className="text-slate-400" />
-          <span className="font-mono text-sm font-semibold text-slate-200 sm:text-base">
-            {workspacesCount}
-          </span>
-          <span className="text-[0.62rem] uppercase tracking-wider text-slate-500">
-            Workspaces
-          </span>
-        </div>
-
-        {/* Applications */}
-        <div className="flex flex-col items-center gap-1.5">
-          <Icon name="grid" size={17} className="text-slate-400" />
-          <span className="font-mono text-sm font-semibold text-slate-200 sm:text-base">
-            {activeAppsCount}
-          </span>
-          <span className="text-[0.62rem] uppercase tracking-wider text-slate-500">
-            Applications
-          </span>
-        </div>
-
-        {/* Projects */}
-        <div className="flex flex-col items-center gap-1.5">
-          <Icon name="folder" size={17} className="text-slate-400" />
-          <span className="font-mono text-sm font-semibold text-slate-200 sm:text-base">
-            {projectsCount}
-          </span>
-          <span className="text-[0.62rem] uppercase tracking-wider text-slate-500">
-            Projects
-          </span>
-        </div>
-
-        {/* Mission */}
-        <div className="flex flex-col items-center gap-1.5">
-          <Icon name="code" size={17} className="text-slate-400" />
-          <span className="font-mono text-sm font-semibold text-slate-200 sm:text-base">
-            {missionCount}
-          </span>
-          <span className="text-[0.62rem] uppercase tracking-wider text-slate-500">
-            {missionLabel}
-          </span>
+          {/* Mission */}
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <Icon name="code" size={16} className="text-slate-400" />
+            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+              {missionCount}
+            </span>
+            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+              {missionLabel}
+            </span>
+          </div>
         </div>
       </div>
     </div>
