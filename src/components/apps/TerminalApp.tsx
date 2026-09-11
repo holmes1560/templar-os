@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useProjects, useProfile, useTimeline } from "../os/PortfolioProvider";
 import { site, os } from "@/lib/site";
 import { useOS } from "@/lib/store";
+import { openExternalUrl } from "@/lib/navigation";
 
 type Line = { kind: "in" | "out" | "err"; text: string };
 
@@ -117,7 +118,7 @@ export function TerminalApp() {
       }
 
       case "github":
-        window.open(site.github, "_blank", "noopener,noreferrer");
+        openExternalUrl(site.github);
         notify({ title: "Opened externally", body: "GitHub profile" });
         push({ kind: "out", text: `Opening ${site.github}` });
         break;

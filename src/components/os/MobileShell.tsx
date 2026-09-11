@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useOS } from "@/lib/store";
 import { WORKSPACES } from "@/lib/apps";
 import { useDesktopApps, useApp } from "./PortfolioProvider";
+import { openExternalUrl } from "@/lib/navigation";
 import { site } from "@/lib/site";
 import { AppHost } from "../apps";
 import { Icon } from "./Icon";
@@ -57,7 +58,7 @@ export function MobileShell() {
               onClick={() => {
                 if (a.appKey === "webview") { setPhase("web"); return; }
                 if (a.launchMode === "external" && a.url) {
-                  window.open(a.url, "_blank", "noopener,noreferrer");
+                  openExternalUrl(a.url);
                   notify({ title: "Opened externally", body: a.name });
                   return;
                 }

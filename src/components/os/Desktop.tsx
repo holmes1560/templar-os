@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOS } from "@/lib/store";
 import { WORKSPACES } from "@/lib/apps";
 import { useDesktopApps } from "./PortfolioProvider";
+import { openExternalUrl } from "@/lib/navigation";
 import type { PublicApp } from "@/lib/portfolio-types";
 import { Icon } from "./Icon";
 
@@ -87,7 +88,7 @@ export function Desktop() {
       if (app.appKey === "webview") { setPhase("web"); return; }
 
       if (app.launchMode === "external" && app.url) {
-        window.open(app.url, "_blank", "noopener,noreferrer");
+        openExternalUrl(app.url);
         notify({ title: "Opened externally", body: app.name });
         return;
       }

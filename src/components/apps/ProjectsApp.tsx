@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useProjects } from "../os/PortfolioProvider";
 import { CATEGORY_LABEL, type CategoryKey as Category, type PublicProject as Project } from "@/lib/portfolio-types";
 import { useOS } from "@/lib/store";
+import { openExternalUrl } from "@/lib/navigation";
 import { Icon } from "../os/Icon";
 
 const CATS = Object.keys(CATEGORY_LABEL) as Category[];
@@ -114,7 +115,7 @@ function Detail({ project: p, onBack }: { project: Project; onBack: () => void }
   const openApp = useOS((s) => s.openApp);
 
   const openExternal = (url: string, what: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
+    openExternalUrl(url);
     notify({ title: "Opened externally", body: what });
   };
 
@@ -166,7 +167,11 @@ function Detail({ project: p, onBack }: { project: Project; onBack: () => void }
         {/* links — only ones that actually resolve */}
         <div className="mt-5 flex flex-wrap gap-2">
           {p.visibility === "public" && p.githubUrl && (
-            <LinkBtn onClick={() => openExternal(p.githubUrl!, `${p.title} repository`)} icon="github">
+            <LinkBtn
+              href={p.githubUrl}
+              onClick={() => notify({ title: "Opened externally", body: `${p.title} repository` })}
+              icon="github"
+            >
               Repository
             </LinkBtn>
           )}
@@ -179,7 +184,8 @@ function Detail({ project: p, onBack }: { project: Project; onBack: () => void }
           )}
           {p.demoUrl && (
             <LinkBtn
-              onClick={() => openExternal(p.demoUrl!, `${p.title} live demo`)}
+              href={p.demoUrl}
+              onClick={() => notify({ title: "Opened externally", body: `${p.title} live demo` })}
               icon="external"
               accent={!p.embeddable}
             >
@@ -251,18 +257,35 @@ function Flag({ tone, children }: { tone: "warn"; children: React.ReactNode }) {
 }
 
 function LinkBtn({
-  onClick, icon, children, accent,
+  href, onClick, icon, children, accent,
 }: {
-  onClick: () => void; icon: string; children: React.ReactNode; accent?: boolean;
+  href?: string; onClick?: () => void; icon: string; children: React.ReactNode; accent?: boolean;
 }) {
+  const className = `pressable inline-flex items-center gap-1.5 rounded-[var(--os-r-chip)] px-2.5 py-1.5 text-xs font-medium transition-colors ${
+    accent
+      ? "bg-[var(--os-accent)] text-[var(--os-accent-fg)]"
+      : "border border-[var(--os-line-strong)] text-[var(--os-fg)] hover:bg-[var(--os-surface-3)]"
+  }`;
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClick}
+        className={className}
+      >
+        <Icon name={icon} size={13} />
+        {children}
+      </a>
+    );
+  }
+
   return (
     <button
       onClick={onClick}
-      className={`pressable flex items-center gap-1.5 rounded-[var(--os-r-chip)] px-2.5 py-1.5 text-xs font-medium transition-colors ${
-        accent
-          ? "bg-[var(--os-accent)] text-[var(--os-accent-fg)]"
-          : "border border-[var(--os-line-strong)] text-[var(--os-fg)] hover:bg-[var(--os-surface-3)]"
-      }`}
+      className={className}
     >
       <Icon name={icon} size={13} />
       {children}

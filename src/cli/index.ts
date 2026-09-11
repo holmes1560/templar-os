@@ -363,13 +363,19 @@ async function cmdProjects(args: string[]) {
   const sub = args[0] || "list";
 
   if (sub === "list") {
-    const data = await apiRequest<any>(config, "/api/v1/projects");
-    console.log(`\n=== Published Projects (${data.items?.length || 0}) ===\n`);
-    for (const p of data.items || []) {
-      console.log(`• [${p.category.padEnd(12)}] ${p.title} (${p.slug})`);
-      console.log(`  ${p.summary}`);
-      if (p.technologies?.length) {
-        console.log(`  Tech: ${p.technologies.join(", ")}`);
+    const res = await apiRequest<any>(config, "/api/v1/projects");
+    const projects = res.items || res.data || [];
+    console.log(`\n=== Published Projects (${projects.length}) ===\n`);
+    for (const p of projects) {
+      const title = p.title || p.name;
+      const summary = p.summary || p.shortDescription || "";
+      const techList = Array.isArray(p.technologies)
+        ? p.technologies.map((t: any) => (typeof t === "string" ? t : t?.technology?.name || t?.name)).filter(Boolean)
+        : [];
+      console.log(`• [${String(p.category || "").padEnd(12)}] ${title} (${p.slug})`);
+      if (summary) console.log(`  ${summary}`);
+      if (techList.length) {
+        console.log(`  Tech: ${techList.join(", ")}`);
       }
       console.log();
     }
@@ -380,7 +386,7 @@ async function cmdProjects(args: string[]) {
       return;
     }
     const data = await apiRequest<any>(config, `/api/v1/projects/${slug}`);
-    console.log(JSON.stringify(data.project, null, 2));
+    console.log(JSON.stringify(data.project || data.data || data, null, 2));
   } else {
     console.log("Usage: cli projects [list | get <slug>]");
   }
@@ -391,17 +397,19 @@ async function cmdDrafts(args: string[]) {
   const sub = args[0] || "list";
 
   if (sub === "list") {
-    const data = await apiRequest<any>(config, "/api/v1/drafts");
-    console.log(`\n=== Review Queue / Drafts (${data.items?.length || 0}) ===\n`);
-    if (data.items?.length === 0) {
+    const res = await apiRequest<any>(config, "/api/v1/drafts");
+    const drafts = res.items || res.data || [];
+    console.log(`\n=== Review Queue / Drafts (${drafts.length}) ===\n`);
+    if (drafts.length === 0) {
       console.log("No pending drafts in the review queue.");
       return;
     }
-    for (const d of data.items || []) {
+    for (const d of drafts) {
       console.log(`ID: ${d.id}`);
       console.log(`  Entity : ${d.entityType} (${d.action})`);
-      console.log(`  Summary: ${d.summary}`);
-      console.log(`  Created: ${d.createdAt} by ${d.author || "Agent"}`);
+      console.log(`  Title  : ${d.title}`);
+      if (d.summary) console.log(`  Summary: ${d.summary}`);
+      console.log(`  Created: ${d.createdAt} by ${d.apiKey?.name || d.aiOrigin || d.author || "Agent"}`);
       console.log(`  Status : ${d.status}`);
       console.log();
     }

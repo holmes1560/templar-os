@@ -75,7 +75,41 @@ export async function publishDraft(draftId: string) {
 
   // Apply change according to entityType
   if (draft.entityType.toLowerCase() === "project") {
-    if (draft.action === "CREATE") {
+    if (draft.action === "UPDATE" && draft.entityId) {
+      const updated = await db.project.update({
+        where: { id: draft.entityId },
+        data: {
+          ...data,
+          status: "PUBLISHED",
+          category: data.category ? data.category.toUpperCase() : undefined,
+          repoVisibility: data.repoVisibility ? data.repoVisibility.toUpperCase() : undefined,
+        },
+      });
+
+      if (Array.isArray(data.technologies)) {
+        await db.projectTechnology.deleteMany({ where: { projectId: draft.entityId } });
+        for (const [order, techName] of data.technologies.entries()) {
+          const tech = await db.technology.upsert({
+            where: { name: techName },
+            update: {},
+            create: { name: techName, slug: techName.toLowerCase().replace(/[^a-z0-9]+/g, "-") },
+          });
+          await db.projectTechnology.create({
+            data: { projectId: draft.entityId, technologyId: tech.id, order },
+          });
+        }
+      }
+
+      await logRevision({
+        entityType: "Project",
+        entityId: updated.id,
+        action: "UPDATE",
+        before: null,
+        after: updated,
+        author: user.email,
+        changeSummary: `Published Project update draft "${updated.name}" into production`,
+      });
+    } else {
       const slug = data.slug || data.name?.toLowerCase().replace(/[^a-z0-9-]/g, "-") || `project-${Date.now()}`;
       const created = await db.project.create({
         data: {
@@ -109,6 +143,19 @@ export async function publishDraft(draftId: string) {
         },
       });
 
+      if (Array.isArray(data.technologies) && data.technologies.length > 0) {
+        for (const [order, techName] of data.technologies.entries()) {
+          const tech = await db.technology.upsert({
+            where: { name: techName },
+            update: {},
+            create: { name: techName, slug: techName.toLowerCase().replace(/[^a-z0-9]+/g, "-") },
+          });
+          await db.projectTechnology.create({
+            data: { projectId: created.id, technologyId: tech.id, order },
+          });
+        }
+      }
+
       await logRevision({
         entityType: "Project",
         entityId: created.id,
@@ -120,7 +167,25 @@ export async function publishDraft(draftId: string) {
       });
     }
   } else if (draft.entityType.toLowerCase() === "timelineentry" || draft.entityType.toLowerCase() === "timeline") {
-    if (draft.action === "CREATE") {
+    if (draft.action === "UPDATE" && draft.entityId) {
+      const updated = await db.timelineEntry.update({
+        where: { id: draft.entityId },
+        data: {
+          ...data,
+          type: data.type ? data.type.toUpperCase() : undefined,
+        },
+      });
+
+      await logRevision({
+        entityType: "TimelineEntry",
+        entityId: updated.id,
+        action: "UPDATE",
+        before: null,
+        after: updated,
+        author: user.email,
+        changeSummary: `Published Milestone update draft "${updated.title}" into production`,
+      });
+    } else {
       const created = await db.timelineEntry.create({
         data: {
           title: data.title,
@@ -149,6 +214,19 @@ export async function publishDraft(draftId: string) {
         author: user.email,
         changeSummary: `Published Milestone draft "${created.title}" into production`,
       });
+    }
+  } else if (draft.entityType.toLowerCase() === "skill") {
+    if (draft.action === "UPDATE" && draft.entityId) {
+      await db.skill.update({ where: { id: draft.entityId }, data });
+    } else {
+      await db.skill.create({ data: data as any });
+    }
+  } else if (draft.entityType.toLowerCase() === "profile" || draft.entityType.toLowerCase() === "about") {
+    const profile = await db.profile.findFirst();
+    if (profile) {
+      await db.profile.update({ where: { id: profile.id }, data });
+    } else {
+      await db.profile.create({ data: data as any });
     }
   }
 

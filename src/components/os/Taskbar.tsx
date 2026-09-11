@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useOS } from "@/lib/store";
 import { WORKSPACES } from "@/lib/apps";
 import { useApps, useApp } from "./PortfolioProvider";
+import { openExternalUrl } from "@/lib/navigation";
 import { site } from "@/lib/site";
 import { Icon } from "./Icon";
 
@@ -177,7 +178,7 @@ function Launcher() {
               onClick={() => {
                 if (a.appKey === "webview") { setLauncher(false); setPhase("web"); return; }
                 if (a.launchMode === "external" && a.url) {
-                  window.open(a.url, "_blank", "noopener,noreferrer");
+                  openExternalUrl(a.url);
                   notify({ title: "Opened externally", body: a.name });
                   setLauncher(false);
                   return;
