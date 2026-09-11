@@ -2,26 +2,31 @@ import React from "react";
 
 export interface TemplarLogoProps {
   size?: number;
+  width?: number;
+  height?: number;
   className?: string;
   glow?: boolean;
 }
 
 /**
  * Handcrafted vector SVG recreation of the futuristic winged "T" Templar OS emblem.
- * Features dual chamfered wings and a tapered central spine rendered in a radiant cyan-blue gradient.
+ * Features dual chamfered wings and a tapered central spine rendered in a radiant white-to-cyan-blue gradient.
  */
 export function TemplarLogo({
-  size = 56,
+  size = 72,
+  width,
+  height,
   className = "",
   glow = true,
 }: TemplarLogoProps) {
-  const filterId = "templar-logo-glow";
+  const w = width ?? size;
+  const h = height ?? (size * 80) / 100;
   const gradId = "templar-logo-grad";
 
   return (
     <svg
-      width={size}
-      height={(size * 80) / 100}
+      width={w}
+      height={h}
       viewBox="0 0 100 80"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -29,14 +34,15 @@ export function TemplarLogo({
       aria-hidden="true"
       focusable="false"
       style={{
-        filter: glow ? "drop-shadow(0 0 12px rgba(56, 189, 248, 0.45))" : undefined,
+        filter: glow ? "drop-shadow(0 0 14px rgba(56, 189, 248, 0.5))" : undefined,
       }}
     >
       <defs>
         <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#7dd3fc" />
-          <stop offset="25%" stopColor="#38bdf8" />
-          <stop offset="75%" stopColor="#60a5fa" />
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="25%" stopColor="#bae6fd" />
+          <stop offset="55%" stopColor="#38bdf8" />
+          <stop offset="85%" stopColor="#60a5fa" />
           <stop offset="100%" stopColor="#2563eb" />
         </linearGradient>
       </defs>

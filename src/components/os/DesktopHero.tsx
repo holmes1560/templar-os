@@ -17,8 +17,8 @@ export interface DesktopHeroProps {
  * Strictly non-interactive (pointer-events-none select-none) so it never
  * obstructs desktop icon dragging, clicking, or window management.
  *
- * All text fields are dynamic and editable via Admin Panel settings.
- * All metrics (Workspaces, Applications, Projects, Mission) match live system state.
+ * Measurements, typography weights, letter-spacing, and vertical spacing are
+ * grounded directly in the 1650x925 reference composition.
  */
 export function DesktopHero({ workspace }: DesktopHeroProps) {
   const enabled = useSetting("hero.enabled", "true") !== "false";
@@ -40,7 +40,7 @@ function DesktopHeroContent() {
   // Dynamic system counts with intelligent fallbacks matching live system
   const workspacesCount = useSetting("hero.workspacesCount") || String(WORKSPACES.length || 4);
   const activeAppsCount = useSetting("hero.appsCount") || String(apps.filter((a) => a.appKey !== "webview").length || 12);
-  const projectsCount = useSetting("hero.projectsCount") || String(projects.length || 12);
+  const projectsCount = useSetting("hero.projectsCount") || String(projects.length || 18);
   const missionCount = useSetting("hero.missionCount", "1");
   const missionLabel = useSetting("hero.missionLabel", "Mission");
 
@@ -61,118 +61,129 @@ function DesktopHeroContent() {
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center"
     >
-      {/* ── Central Welcome Container (Width: ~520px, Min-height: ~430px) ── */}
+      {/* ── Central Welcome Container (Width: 560px, visually centered) ── */}
       <div
-        className="relative flex w-[520px] min-h-[430px] flex-col items-center justify-center text-center px-4"
+        className="relative flex w-[560px] flex-col items-center justify-center text-center px-4"
         style={{ maxWidth: "calc(100vw - 32px)" }}
       >
         {/* Upper Framed Area with Technical HUD Corner Brackets */}
         <div className="relative flex w-full flex-col items-center">
           {/* Subtle Technical Corner Brackets */}
-          <span className="pointer-events-none absolute left-0 top-[20px] h-3.5 w-3.5 border-l border-t border-[#38bdf8]/35" />
-          <span className="pointer-events-none absolute right-0 top-[20px] h-3.5 w-3.5 border-r border-t border-[#38bdf8]/35" />
-          <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b border-l border-[#38bdf8]/35" />
-          <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b border-r border-[#38bdf8]/35" />
+          <span className="pointer-events-none absolute left-0 top-[28px] h-4 w-4 border-l border-t border-[#38bdf8]/40" />
+          <span className="pointer-events-none absolute right-0 top-[28px] h-4 w-4 border-r border-t border-[#38bdf8]/40" />
+          <span className="pointer-events-none absolute bottom-0 left-0 h-4 w-4 border-b border-l border-[#38bdf8]/40" />
+          <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b border-r border-[#38bdf8]/40" />
 
-          {/* 1. Templar logo (Container: 52x52px, actual logo 44px, center aligned, 28px space below) */}
-          <div className="mb-[28px] flex h-[52px] w-[52px] items-center justify-center">
-            <TemplarLogo size={44} glow />
+          {/* 1. Templar Logo (84px wide, 72px high, center aligned, 26px space below) */}
+          <div className="mb-[26px] flex items-center justify-center">
+            <TemplarLogo width={84} height={72} glow />
           </div>
 
-          {/* 2. "WELCOME TO" (10px font, letter spacing: 5px, uppercase, 10px space below) */}
+          {/* 2. "WELCOME TO" (10.5px monospace font, 6px letter spacing, uppercase, 20px space below) */}
           <p
-            className="mb-[10px] text-[10px] font-medium uppercase text-slate-400"
-            style={{ letterSpacing: "5px" }}
+            className="mb-[20px] font-mono text-[10.5px] font-normal uppercase text-[#7c94b6]"
+            style={{ letterSpacing: "6px" }}
           >
             {greeting}
           </p>
 
-          {/* 3. "Templar OS" (approx 42px font size, line-height: 1, Templar white, OS blue/cyan, 14px space below) */}
-          <h1 className="mb-[14px] text-[42px] font-bold leading-none tracking-tight">
-            <span className="text-slate-100">{mainTitle}</span>
+          {/* 3. "Templar OS" (48-52px font size, clean font-normal / font-medium weight, leading-none, 26px space below) */}
+          <h1 className="mb-[26px] font-sans text-[48px] font-normal leading-none tracking-tight sm:text-[52px]">
+            <span className="text-white font-normal">{mainTitle}</span>
             {suffix && (
-              <span className="ml-2.5 text-[#38bdf8] drop-shadow-[0_0_16px_rgba(56,189,248,0.45)]">
+              <span className="ml-3 text-[#3894ff] font-normal drop-shadow-[0_0_18px_rgba(56,148,255,0.45)]">
                 {suffix}
               </span>
             )}
           </h1>
 
-          {/* 4. "ASENSO OWUSU ANSAH" (12px font, letter spacing: 4px, uppercase, 10px space below) */}
+          {/* 4. "ASENSO OWUSU ANSAH" (12px font, 4.5px letter spacing, uppercase, 16px space below) */}
           <p
-            className="mb-[10px] text-[12px] font-semibold uppercase text-slate-200"
-            style={{ letterSpacing: "4px" }}
+            className="mb-[16px] font-sans text-[12px] font-medium uppercase text-[#cbd5e1]"
+            style={{ letterSpacing: "4.5px" }}
           >
             {ownerName}
           </p>
 
-          {/* 5. Role line (approx 10px, muted blue/gray, approx 25px space below) */}
-          <p className="mb-[25px] text-[10px] tracking-normal text-slate-400">
-            {subtitle}
+          {/* 5. Role line (11px font, font-normal, muted blue-gray, 36px space below) */}
+          <p className="mb-[36px] font-sans text-[11px] font-normal tracking-wide text-[#7c94b6]">
+            {subtitle.includes("|") ? (
+              subtitle.split("|").map((part, i, arr) => (
+                <React.Fragment key={i}>
+                  <span>{part.trim()}</span>
+                  {i < arr.length - 1 && (
+                    <span className="mx-3.5 text-[#475569] font-light">|</span>
+                  )}
+                </React.Fragment>
+              ))
+            ) : (
+              subtitle
+            )}
           </p>
 
-          {/* 6. Thin accent divider (width: 68px, height: 1px, blue/cyan, approx 30px space below) */}
-          <div className="mb-[30px] h-[1px] w-[68px] bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent shadow-[0_0_8px_rgba(56,189,248,0.6)]" />
+          {/* 6. Thin accent divider (76px width, 1.5px height, cyan glowing gradient, 34px space below) */}
+          <div className="mb-[34px] h-[1.5px] w-[76px] bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent shadow-[0_0_10px_rgba(56,189,248,0.7)]" />
 
-          {/* 7. Instruction (approx 10px, letter spacing around 1px, muted blue/gray, 45px vertical space after) */}
+          {/* 7. Instruction (11px font, font-normal, muted blue-gray, 38px space below) */}
           <p
-            className="text-[10px] text-slate-400"
-            style={{ letterSpacing: "1px" }}
+            className="font-sans text-[11px] font-normal text-[#7c94b6]"
+            style={{ letterSpacing: "0.5px" }}
           >
             {prompt}
           </p>
         </div>
 
         {/* 8. Statistics row (Four items: Workspaces, Applications, Projects, Mission with subtle vertical separators) */}
-        <div className="mt-[45px] flex w-full items-center justify-between px-2">
+        <div className="mt-[38px] flex w-full max-w-[540px] items-center justify-between px-2">
           {/* Workspaces */}
           <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="monitor" size={16} className="text-slate-400" />
-            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+            <Icon name="monitor" size={18} className="text-[#60a5fa]" />
+            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
               {workspacesCount}
             </span>
-            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
               Workspaces
             </span>
           </div>
 
           {/* Subtle vertical separator */}
-          <div className="h-[26px] w-[1px] bg-slate-700/40" />
+          <div className="h-[44px] w-[1px] bg-[#334155]/40" />
 
           {/* Applications */}
           <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="grid" size={16} className="text-slate-400" />
-            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+            <Icon name="grid" size={18} className="text-[#60a5fa]" />
+            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
               {activeAppsCount}
             </span>
-            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
               Applications
             </span>
           </div>
 
           {/* Subtle vertical separator */}
-          <div className="h-[26px] w-[1px] bg-slate-700/40" />
+          <div className="h-[44px] w-[1px] bg-[#334155]/40" />
 
           {/* Projects */}
           <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="folder" size={16} className="text-slate-400" />
-            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+            <Icon name="folder" size={18} className="text-[#60a5fa]" />
+            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
               {projectsCount}
             </span>
-            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
               Projects
             </span>
           </div>
 
           {/* Subtle vertical separator */}
-          <div className="h-[26px] w-[1px] bg-slate-700/40" />
+          <div className="h-[44px] w-[1px] bg-[#334155]/40" />
 
           {/* Mission */}
           <div className="flex flex-1 flex-col items-center justify-center">
-            <Icon name="code" size={16} className="text-slate-400" />
-            <span className="mt-1.5 font-mono text-sm font-semibold text-slate-200 sm:text-[15px]">
+            <Icon name="code" size={18} className="text-[#60a5fa]" />
+            <span className="mt-[14px] font-sans text-[18px] font-medium leading-none text-white">
               {missionCount}
             </span>
-            <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[1px] text-slate-500">
+            <span className="mt-[9px] font-sans text-[11px] font-normal text-[#7c94b6]">
               {missionLabel}
             </span>
           </div>
