@@ -529,7 +529,8 @@ async function main() {
         break;
       case "mcp":
       case "server": {
-        const mcpDist = path.join(__dirname, "..", "mcp", "server.mjs");
+        const currentDir = path.dirname(fileURLToPath(import.meta.url));
+        const mcpDist = path.join(currentDir, "..", "mcp", "server.mjs");
         if (fs.existsSync(mcpDist)) {
           await import(mcpDist);
         } else {

@@ -1,6 +1,6 @@
 {
   "name": "templar-os",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": false,
   "description": "TEMPLAR OS interactive portfolio OS, agent CLI, and MCP server",
   "bin": {
@@ -14,8 +14,8 @@
   ],
   "scripts": {
     "dev": "next dev -p 3100",
-    "build": "tsup src/cli/index.ts src/mcp/server.ts --format esm --clean && prisma generate && next build",
-    "build:cli": "tsup src/cli/index.ts src/mcp/server.ts --format esm --clean",
+    "build": "tsup src/cli/index.ts src/mcp/server.ts --format esm --target node18 --clean && prisma generate && next build",
+    "build:cli": "tsup src/cli/index.ts src/mcp/server.ts --format esm --target node18 --clean",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "prisma generate",
