@@ -294,13 +294,17 @@ async function cmdInstall(args: string[]) {
 
   // MCP Server Configuration
   const rootDir = process.cwd();
+  const distServer = path.join(rootDir, "dist", "mcp", "server.mjs");
   const tsxBin = path.join(rootDir, "node_modules", ".bin", "tsx");
   const serverPath = path.join(rootDir, "src", "mcp", "server.ts");
 
-  let mcpCommand = "tsx";
-  let mcpArgs = [serverPath];
+  let mcpCommand = "node";
+  let mcpArgs = [distServer];
 
-  if (fs.existsSync(tsxBin)) {
+  if (fs.existsSync(distServer)) {
+    mcpCommand = "node";
+    mcpArgs = [distServer];
+  } else if (fs.existsSync(tsxBin) && fs.existsSync(serverPath)) {
     mcpCommand = tsxBin;
     mcpArgs = [serverPath];
   } else if (fs.existsSync(serverPath)) {
