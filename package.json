@@ -12,11 +12,14 @@
     "skills",
     "README.md"
   ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev -p 3100",
     "build": "tsup src/cli/index.ts src/mcp/server.ts --format esm --target node18 --clean && prisma generate && next build",
     "build:cli": "tsup src/cli/index.ts src/mcp/server.ts --format esm --target node18 --clean",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
